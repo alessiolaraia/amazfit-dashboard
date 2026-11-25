@@ -7,8 +7,8 @@
   var $ = D.$, el = D.el;
 
   /* ---------------- Router ---------------- */
-  var VIEWS = ['heute', 'ziele', 'gym', 'uni', 'verlauf'];
-  var TITLES = { heute: 'Mein Dashboard', ziele: 'Ziele', gym: 'Gym', uni: 'Uni', verlauf: 'Verlauf' };
+  var VIEWS = ['heute', 'ziele', 'gym', 'verlauf'];
+  var TITLES = { heute: 'Mein Dashboard', ziele: 'Ziele', gym: 'Gym', verlauf: 'Verlauf' };
   var current = null;
   function viewFromHash() {
     var h = (window.location.hash || '').replace(/^#/, '');
@@ -22,12 +22,10 @@
       else b.removeAttribute('aria-current');
     });
     $('pageTitle').textContent = TITLES[view];
-    $('daybar').hidden = view !== 'heute';
     document.title = view === 'heute' ? 'Mein Dashboard' : TITLES[view] + ' · Mein Dashboard';
     if (view === 'verlauf') D.History.render();
     if (view === 'ziele') D.Goals.render();
     if (view === 'gym') D.Gym.render();
-    if (view === 'uni') D.Uni.render();
   }
   D.go = function (view, opts) {
     if (view === 'verlauf' && opts && opts.metric) D.History.select(opts.metric);
@@ -37,27 +35,67 @@
   };
   window.addEventListener('hashchange', function () { show(viewFromHash()); window.scrollTo(0, 0); });
 
-  /* ---------------- Greeting + day bar ---------------- */
+  /* ---------------- Greeting + day ring ---------------- */
+  var SUN_STOPS = [
+    [0, [255, 216, 158]], [12.5, [255, 205, 121]], [25, [255, 227, 143]], [37.5, [255, 183, 106]],
+    [50, [255, 149, 89]], [62.5, [243, 111, 79]], [75, [226, 93, 122]], [87.5, [123, 91, 176]], [100, [47, 58, 102]]
+  ];
+  var RING_C = 2 * Math.PI * 52;
+  function sunColor(pct) {
+    var p = Math.max(0, Math.min(100, pct));
+    for (var i = 0; i < SUN_STOPS.length - 1; i++) {
+      var a = SUN_STOPS[i], b = SUN_STOPS[i + 1];
+      if (p >= a[0] && p <= b[0]) {
+        var t = (p - a[0]) / (b[0] - a[0]);
+        return 'rgb(' + [0, 1, 2].map(function (k) { return Math.round(a[1][k] + (b[1][k] - a[1][k]) * t); }).join(', ') + ')';
+      }
+    }
+    return 'rgb(47, 58, 102)';
+  }
+  function hourLabel(h) { return D.pad2(h % 24) + ':00'; }
   var lastActive = null;
   function updateDay() {
     var s = D.getSettings();
     var now = new Date();
     var h = now.getHours();
     var greet = h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 18 ? 'Guten Tag' : 'Guten Abend';
-    $('greet').textContent = greet + ' · ' + D.fmtDayLong(D.todayStr());
-    var hours = h + now.getMinutes() / 60;
-    if (s.sleepHour > 24 && hours < s.sleepHour - 24) hours += 24;
-    var pct, text;
-    if (hours < s.wakeHour) { pct = 0; text = 'Noch ' + D.fmtHM(s.wakeHour - hours) + ' bis zum Aufstehen'; }
-    else if (hours < s.sleepHour) {
-      pct = (hours - s.wakeHour) / (s.sleepHour - s.wakeHour) * 100;
-      text = 'Noch <b>' + D.fmtHM(s.sleepHour - hours) + '</b> wach';
-    } else { pct = 100; text = 'Schon nach deiner Schlafenszeit 🌙'; }
-    $('daybarText').innerHTML = '<span>' + text + '</span><span>' + Math.floor(pct) + ' % vom Tag</span>';
-    $('daybarFill').style.width = pct + '%';
+    $('greet').textContent = greet + ' · ' + D.fmtDay(D.todayStr());
+    var WAKE = s.wakeHour, SLEEP = s.sleepHour;
+    var hours = h + now.getMinutes() / 60 + now.getSeconds() / 3600;
+    if (SLEEP > 24 && hours < SLEEP - 24) hours += 24;
+    var pct, color, pctHTML, phase, status, remaining;
+    if (hours < WAKE) {
+      pct = 0; color = '#4D4B47'; pctHTML = '—'; phase = 'SCHLAF'; status = '😴 Du schläfst noch';
+      remaining = 'Noch ' + D.fmtHM(WAKE - hours) + ' bis zum Aufstehen';
+    } else if (hours < SLEEP) {
+      pct = (hours - WAKE) / (SLEEP - WAKE) * 100;
+      color = sunColor(pct);
+      pctHTML = Math.floor(pct) + '<span class="pct-sign">%</span>';
+      if (pct < 25) { phase = 'MORGEN'; status = '☀️ Morgen — frischer Start'; }
+      else if (pct < 50) { phase = 'MITTAG'; status = '⚡ Mittag — dranbleiben'; }
+      else if (pct < 75) { phase = 'NACHMITTAG'; status = '🔥 Nachmittag — Gas geben'; }
+      else if (pct < 90) { phase = 'ABEND'; status = '⏳ Abend — Tag abschließen'; }
+      else { phase = 'BETTZEIT'; status = '🌙 Bald Schlafenszeit'; }
+      remaining = 'Noch ' + D.fmtHM(SLEEP - hours) + ' wach';
+    } else {
+      pct = 100; color = '#E25D7A'; pctHTML = '100<span class="pct-sign">%</span>';
+      phase = 'ZU SPÄT'; status = '⚠️ Schon nach deiner Schlafenszeit'; remaining = 'Ab ins Bett!';
+    }
+    var fill = $('ringFill');
+    fill.style.strokeDasharray = String(RING_C);
+    fill.style.stroke = color;
+    fill.style.strokeDashoffset = String(RING_C * (1 - pct / 100));
+    fill.style.opacity = pct > 0 ? '1' : '0';
+    $('ringPct').innerHTML = pctHTML;
+    $('ringPhase').textContent = phase;
+    $('ringClock').textContent = D.fmtClock(now);
+    $('dayStatus').textContent = status;
+    $('dayRemaining').textContent = remaining;
+    $('dayHours').textContent = 'Wach-Fenster ' + hourLabel(WAKE) + ' – ' + hourLabel(SLEEP);
+    $('dayRing').setAttribute('aria-label', 'Tag zu ' + Math.floor(pct) + ' % vorbei');
 
     var a = D.activeDate();
-    if (lastActive && a !== lastActive) { D.Goals.dayChanged(); D.renderBody(); D.Gym.render(); D.Uni.render(); }
+    if (lastActive && a !== lastActive) { D.Goals.dayChanged(); D.renderBody(); D.Gym.render(); }
     lastActive = a;
   }
   function startDay() {
@@ -68,7 +106,6 @@
   }
 
   /* ---------------- Settings ---------------- */
-  function hourLabel(h) { return D.pad2(h % 24) + ':00'; }
   function fillSelects() {
     var w = $('setWake'), s = $('setSleep'), g = $('setGymGoal');
     w.innerHTML = ''; s.innerHTML = ''; g.innerHTML = '';
@@ -85,7 +122,6 @@
     $('setAnthropicKey').value = s.anthropicKey;
     $('setStepGoal').value = s.stepGoal;
     $('setWeightGoal').value = s.weightGoal ? String(s.weightGoal).replace('.', ',') : '';
-    $('setStudyGoal').value = s.studyGoalH ? String(s.studyGoalH).replace('.', ',') : '';
     fillSelects();
     $('setWake').value = s.wakeHour;
     $('setSleep').value = s.sleepHour;
@@ -104,7 +140,6 @@
     var athleteId = $('setAthleteId').value.trim() || '0';
     var goalNum = Math.round(Number($('setStepGoal').value));
     var wg = D.parseNum($('setWeightGoal').value);
-    var sg = D.parseNum($('setStudyGoal').value);
     var wake = Number($('setWake').value), sleep = Number($('setSleep').value);
     if (sleep - wake < 8) { res.className = 'sheet-result is-error'; res.textContent = 'Zwischen Aufstehen und Schlafenszeit sollten mindestens 8 Stunden liegen.'; return; }
     D.saveSettings({
@@ -113,7 +148,6 @@
       anthropicKey: $('setAnthropicKey').value.trim(),
       stepGoal: isFinite(goalNum) && goalNum > 0 ? goalNum : 10000,
       weightGoal: D.isNum(wg) && wg > 20 && wg < 350 ? Math.round(wg * 10) / 10 : null,
-      studyGoalH: D.isNum(sg) && sg >= 0 && sg <= 80 ? Math.round(sg * 2) / 2 : 0,
       gymGoal: Number($('setGymGoal').value) || 3,
       wakeHour: wake,
       sleepHour: sleep
@@ -150,7 +184,7 @@
   }
 
   /* ---------------- Backup ---------------- */
-  var BACKUP_KEYS = ['goal_history_v1', 'goal_streak_v1', 'gym_v1', 'uni_exams_v1', 'uni_sessions_v1'];
+  var BACKUP_KEYS = ['goal_history_v1', 'goal_streak_v1', 'gym_v1'];
   function backupKey(k) { return BACKUP_KEYS.indexOf(k) >= 0 || /^(goals|weekgoals):\d{4}-\d{2}-\d{2}$/.test(k); }
   function exportBackup() {
     var data = {};
@@ -177,7 +211,7 @@
       if (!p || p.app !== 'mein-dashboard' || !p.data || typeof p.data !== 'object') { D.toast('Die Datei ist kein Backup dieses Dashboards.'); return; }
       var when = p.exportedAt ? new Date(p.exportedAt) : null;
       var label = when && !isNaN(when) ? D.fmtDate(D.ymd(when)) : 'unbekanntem Datum';
-      if (!window.confirm('Backup vom ' + label + ' importieren? Ziele, Gym-Tage, Uni-Termine und Lernzeiten aus dem Backup ersetzen die gleichen Einträge hier. API-Schlüssel bleiben unverändert.')) return;
+      if (!window.confirm('Backup vom ' + label + ' importieren? Ziele und Gym-Tage aus dem Backup ersetzen die gleichen Einträge hier. API-Schlüssel bleiben unverändert.')) return;
       Object.keys(p.data).forEach(function (k) {
         if (k === 'body_settings_v1') {
           var cur = D.storeGet('body_settings_v1') || {};
@@ -189,7 +223,6 @@
       D.Goals.render();
       D.emit('settings');
       D.emit('gym');
-      D.emit('uni');
       D.closeSheet('settingsSheet');
       D.toast('Backup importiert ✓');
     };
@@ -202,12 +235,10 @@
     if (D.DEMO) $('demoBanner').hidden = false;
     D.Goals.seedDemo();
     D.Gym.seedDemo();
-    D.Uni.seedDemo();
 
     D.Goals.boot();
     D.Body.boot();
     D.Gym.boot();
-    D.Uni.boot();
     D.History.boot();
     D.Photos.boot();
     D.Ask.boot();

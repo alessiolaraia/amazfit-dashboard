@@ -1,13 +1,13 @@
 {
   "name": "Mein Dashboard",
   "short_name": "Dashboard",
-  "description": "Tagesform, Ziele, Gym, Uni und Verlauf.",
+  "description": "Tagesform, Ziele, Gym und Verlauf.",
   "lang": "de",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#F3F0EC",
-  "theme_color": "#F3F0EC",
+  "background_color": "#050506",
+  "theme_color": "#050506",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }

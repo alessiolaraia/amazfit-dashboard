@@ -21,7 +21,11 @@
     wrap.innerHTML = '';
     var keys = D.METRICS.filter(function (m) { return ['sleep', 'hrv', 'rhr', 'steps', 'weight'].indexOf(m.key) >= 0 || D.hasData(m.key); }).map(function (m) { return m.key; });
     keys.forEach(function (k) {
-      var b = el('button', 'chip', D.M[k].label);
+      var b = el('button', 'chip');
+      var dot = el('span', 'dot');
+      dot.style.background = D.M[k].color;
+      b.appendChild(dot);
+      b.appendChild(document.createTextNode(D.M[k].label));
       b.type = 'button';
       b.setAttribute('aria-pressed', String(k === ui.metric));
       b.addEventListener('click', function () { ui.metric = k; ui.rows = 10; saveUi(); render(); });
@@ -72,7 +76,7 @@
     var n = D.normalOf(key, to);
     var asBar = m.chart === 'bar' && ui.range <= 90;
     D.chart($('historyChart'), {
-      from: from, to: to, get: get, key: key, type: asBar ? 'bar' : 'line',
+      from: from, to: to, get: get, key: key, type: asBar ? 'bar' : 'line', color: m.color,
       baseline: n && ui.range <= 90 ? { mean: n.mean, sd: n.sd } : null,
       target: target, avg: ui.range >= 14,
       height: window.innerWidth < 480 ? 210 : 250, label: m.label + ' Verlauf',
@@ -80,9 +84,9 @@
     });
     var lg = $('historyLegend');
     lg.innerHTML = '';
-    function legend(cls, text) { var sp = el('span'); sp.appendChild(el('i', cls)); sp.appendChild(document.createTextNode(text)); lg.appendChild(sp); }
-    legend('l-raw', 'Tageswert');
-    if (ui.range >= 14) legend('l-avg', 'Durchschnitt (7 Tage)');
+    function legend(cls, text, bg) { var sp = el('span'); var i = el('i', cls); if (bg) i.style.background = bg; sp.appendChild(i); sp.appendChild(document.createTextNode(text)); lg.appendChild(sp); }
+    legend('l-raw', 'Tageswert', m.color);
+    if (ui.range >= 14) legend('l-avg', 'Durchschnitt (7 Tage)', asBar ? '#FAFAFA' : m.color);
     if (n && ui.range <= 90) legend('l-band', 'dein normaler Bereich');
     if (target) legend('l-target', 'Ziel');
 
@@ -100,7 +104,7 @@
         var better = m.better === 'higher' ? dlt > 0 : dlt < 0;
         var tiny = Math.abs(dlt) < (key === 'sleep' ? 0.1 : key === 'steps' ? 300 : key === 'weight' ? 0.3 : 1);
         html += tiny ? ' — ungefähr gleich wie im Zeitraum davor.'
-          : ' — <b>' + D.esc(D.fmtDelta(key, dlt)) + '</b> ' + (key === 'weight' ? 'im Vergleich' : (better ? 'besser als' : 'schlechter als')) + (key === 'weight' ? ' zum Zeitraum davor.' : ' im Zeitraum davor.');
+          : ' — <b class="' + (key === 'weight' ? '' : (better ? 'good' : 'attention')) + '">' + D.esc(D.fmtDelta(key, dlt)) + '</b> ' + (key === 'weight' ? 'im Vergleich' : (better ? 'besser als' : 'schlechter als')) + (key === 'weight' ? ' zum Zeitraum davor.' : ' im Zeitraum davor.');
       } else html += '.';
       sum.innerHTML = html;
     }
@@ -121,7 +125,6 @@
       { l: 'Schlaf', f: function (days) { return avgOf('sleep', days); } },
       { l: 'Schritte', f: function (days) { return avgOf('steps', days); } },
       { l: 'Gym', f: function (days, mon) { return D.gymWeekCount ? D.gymWeekCount(mon) + '×' : '—'; } },
-      { l: 'Lernen', f: function (days, mon) { return D.studyMinsWeek ? D.fmtMins(D.studyMinsWeek(mon)) : '—'; } },
       { l: 'Ziele', f: function (days, mon) { var s = D.Goals.weekSummary(mon); return s.total ? Math.round(s.done / s.total * 100) + ' %' : '—'; } }
     ];
     function avgOf(k, days) { var xs = days.map(function (d) { return D.valueOn(k, d); }).filter(D.isNum); return xs.length ? D.fmtValue(k, D.mean(xs)) : '—'; }
@@ -169,7 +172,7 @@
       $('dataMore').addEventListener('click', function () { ui.rows += 30; render(); });
       var rt = null;
       window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(render, 160); });
-      ['data', 'settings', 'goals', 'gym', 'uni'].forEach(function (e) { D.on(e, render); });
+      ['data', 'settings', 'goals', 'gym'].forEach(function (e) { D.on(e, render); });
     },
     render: render,
     select: function (metric) { if (D.M[metric]) { ui.metric = metric; ui.rows = 10; saveUi(); } }

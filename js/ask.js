@@ -16,7 +16,7 @@
 
   var SYSTEM =
     'Du bist ein persönlicher Daten-Coach in einem privaten Gesundheits- und Gewohnheits-Dashboard. ' +
-    'Die Daten stammen von einer Amazfit-Uhr (über Zepp und Intervals.icu), einem Gym-Tracker, einem Lernzeit-Tracker mit Uni-Terminen und einer To-do-Liste. Der Nutzer ist Student. ' +
+    'Die Daten stammen von einer Amazfit-Uhr (über Zepp und Intervals.icu), einem Gym-Tracker und einer To-do-Liste mit Tages- und Wochenzielen. ' +
     'Antworte immer auf Deutsch, per du, kurz und konkret (meist unter 200 Wörtern). ' +
     'Beziehe dich auf konkrete Zahlen und Daten aus dem Kontext. Wenn die Daten für eine Aussage nicht reichen, sag das offen statt zu raten. ' +
     'Unterscheide Zusammenhang von Ursache. Stelle keine medizinischen Diagnosen; empfiehl bei auffälligen Werten oder Beschwerden ärztlichen Rat. ' +
@@ -38,7 +38,7 @@
     var s = D.getSettings();
     var lines = [];
     lines.push('Heute ist ' + D.fmtDayLong(today) + ' ' + today.slice(0, 4) + '.');
-    lines.push('Ziele: ' + s.stepGoal + ' Schritte/Tag, Gym ' + s.gymGoal + '× pro Woche, Lernen ' + s.studyGoalH + ' Std pro Woche' + (s.weightGoal ? ', Zielgewicht ' + D.fmtNum(s.weightGoal, 1) + ' kg' : '') + '.');
+    lines.push('Ziele: ' + s.stepGoal + ' Schritte/Tag, Gym ' + s.gymGoal + '× pro Woche' + (s.weightGoal ? ', Zielgewicht ' + D.fmtNum(s.weightGoal, 1) + ' kg' : '') + '.');
     var f = D.tagesform();
     if (f.status) {
       lines.push('Tagesform heute: ' + ({ gut: 'gut erholt', normal: 'normal', muede: 'eher müde' })[f.status] + ' (Vergleich von letzter Nacht mit dem eigenen Schnitt der 30 Tage davor: ' +
@@ -47,14 +47,13 @@
     lines.push('');
     var cols = ['sleep', 'sleepScore', 'hrv', 'rhr', 'steps', 'weight'].filter(D.hasData);
     var labels = { sleep: 'Schlaf_h', sleepScore: 'Schlafscore', hrv: 'HRV_ms', rhr: 'Ruhepuls', steps: 'Schritte', weight: 'Gewicht_kg' };
-    lines.push('Tageswerte der letzten 30 Tage (leer = nicht gemessen; Gym = x wenn im Gym; Lernen in Minuten):');
-    lines.push(['Datum'].concat(cols.map(function (c) { return labels[c]; })).concat(['Gym', 'Lernen_min']).join(' | '));
+    lines.push('Tageswerte der letzten 30 Tage (leer = nicht gemessen; Gym = x wenn im Gym):');
+    lines.push(['Datum'].concat(cols.map(function (c) { return labels[c]; })).concat(['Gym']).join(' | '));
     for (var i = 29; i >= 0; i--) {
       var d = D.shift(today, -i);
       var row = cols.map(function (c) { return cell(c, d); });
       var gym = D.isGymDay && D.isGymDay(d) ? 'x' : '';
-      var study = D.studyMinsDay ? D.studyMinsDay(d) : 0;
-      row.push(gym, study ? String(Math.round(study)) : '');
+      row.push(gym);
       if (row.every(function (x) { return x === ''; })) continue;
       lines.push([d + ' ' + D.wdShort(d)].concat(row).join(' | '));
     }
@@ -73,7 +72,6 @@
       monthly.forEach(function (l) { lines.push(l); });
     }
     if (D.Gym) { lines.push(''); lines.push(D.Gym.summary()); }
-    if (D.Uni) { lines.push(''); lines.push(D.Uni.summary()); }
     var goals = D.getGoals(D.todayGoalsKey());
     if (goals.length) {
       lines.push('');

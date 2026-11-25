@@ -181,7 +181,7 @@
     var s = D.storeGet(SETTINGS_KEY) || {};
     var athlete = s.athleteId != null && String(s.athleteId).trim() !== '' ? String(s.athleteId).trim() : '0';
     var goal = Number(s.stepGoal), wake = Number(s.wakeHour), sleep = Number(s.sleepHour), wg = Number(s.weightGoal);
-    var gym = Number(s.gymGoal), study = Number(s.studyGoalH);
+    var gym = Number(s.gymGoal);
     if (!isFinite(wake) || wake < 3 || wake > 12 || s.wakeHour == null) wake = 8;
     if (!isFinite(sleep) || sleep < 19 || sleep > 27 || s.sleepHour == null) sleep = 24;
     return {
@@ -192,8 +192,7 @@
       wakeHour: Math.round(wake),
       sleepHour: Math.round(sleep),
       weightGoal: s.weightGoal != null && isFinite(wg) && wg > 0 ? wg : null,
-      gymGoal: isFinite(gym) && gym >= 1 && gym <= 7 && s.gymGoal != null ? Math.round(gym) : 3,
-      studyGoalH: isFinite(study) && study >= 0 && study <= 80 && s.studyGoalH != null ? study : 10
+      gymGoal: isFinite(gym) && gym >= 1 && gym <= 7 && s.gymGoal != null ? Math.round(gym) : 3
     };
   };
   D.saveSettings = function (patch) {
@@ -215,26 +214,26 @@
 
   /* ---------------- Body metrics ---------------- */
   D.METRICS = [
-    { key: 'sleep', label: 'Schlaf', field: 'sleepSecs', positive: true, map: function (v) { return v / 3600; },
+    { key: 'sleep', color: '#9DB1FF', label: 'Schlaf', field: 'sleepSecs', positive: true, map: function (v) { return v / 3600; },
       unit: 'h', dec: 1, chart: 'bar', better: 'higher', fmt: function (v) { return D.fmtHM(v); },
       axis: function (v) { return D.fmtNum(v, 0) + 'h'; },
       about: 'Wie lange du geschlafen hast. Die meisten Erwachsenen brauchen 7–9 Stunden.' },
-    { key: 'hrv', label: 'HRV', field: 'hrv', positive: true, unit: 'ms', dec: 0, chart: 'line', better: 'higher',
+    { key: 'hrv', color: '#6BE3A4', label: 'HRV', field: 'hrv', positive: true, unit: 'ms', dec: 0, chart: 'line', better: 'higher',
       about: 'Herzratenvariabilität: wie flexibel dein Herz zwischen den Schlägen variiert. Höher als sonst heißt meist: gut erholt. Vergleiche sie nur mit dir selbst, nicht mit anderen.' },
-    { key: 'rhr', label: 'Ruhepuls', field: 'restingHR', positive: true, unit: 'bpm', dec: 0, chart: 'line', better: 'lower',
+    { key: 'rhr', color: '#FF8F7E', label: 'Ruhepuls', field: 'restingHR', positive: true, unit: 'bpm', dec: 0, chart: 'line', better: 'lower',
       about: 'Dein Puls in völliger Ruhe. Niedriger als sonst ist meist gut; deutlich höher kann auf Stress, wenig Schlaf oder eine Erkältung hindeuten.' },
-    { key: 'steps', label: 'Schritte', field: 'steps', unit: '', dec: 0, chart: 'bar', better: 'higher',
+    { key: 'steps', color: '#F2C063', label: 'Schritte', field: 'steps', unit: '', dec: 0, chart: 'bar', better: 'higher',
       axis: function (v) { return v >= 1000 ? D.fmtNum(v / 1000, v % 1000 ? 1 : 0) + 'k' : D.fmtNum(v, 0); },
       about: 'Deine Schritte pro Tag laut Uhr.' },
-    { key: 'weight', label: 'Gewicht', field: 'weight', positive: true, unit: 'kg', dec: 1, chart: 'line', better: 'lower',
+    { key: 'weight', color: '#C9A7FF', label: 'Gewicht', field: 'weight', positive: true, unit: 'kg', dec: 1, chart: 'line', better: 'lower',
       about: 'Dein eingetragenes Gewicht. Tägliche Schwankungen von 1–2 kg sind normal — achte auf die Ø-Linie.' },
-    { key: 'sleepScore', label: 'Schlafscore', field: 'sleepScore', positive: true, unit: '', dec: 0, chart: 'line', better: 'higher',
+    { key: 'sleepScore', color: '#7FD1FF', label: 'Schlafscore', field: 'sleepScore', positive: true, unit: '', dec: 0, chart: 'line', better: 'higher',
       about: 'Die Schlafbewertung von Zepp (0–100).' },
-    { key: 'bodyFat', label: 'Körperfett', field: 'bodyFat', positive: true, unit: '%', dec: 1, chart: 'line', better: 'lower',
+    { key: 'bodyFat', color: '#E7A6D8', label: 'Körperfett', field: 'bodyFat', positive: true, unit: '%', dec: 1, chart: 'line', better: 'lower',
       about: 'Dein eingetragener Körperfettanteil.' },
-    { key: 'spO2', label: 'Sauerstoff', field: 'spO2', positive: true, unit: '%', dec: 0, chart: 'line', better: 'higher',
+    { key: 'spO2', color: '#9FC8FF', label: 'Sauerstoff', field: 'spO2', positive: true, unit: '%', dec: 0, chart: 'line', better: 'higher',
       about: 'Sauerstoffsättigung im Blut (SpO₂).' },
-    { key: 'readiness', label: 'Bereitschaft', field: 'readiness', positive: true, unit: '', dec: 0, chart: 'line', better: 'higher',
+    { key: 'readiness', color: '#8FE3D6', label: 'Bereitschaft', field: 'readiness', positive: true, unit: '', dec: 0, chart: 'line', better: 'higher',
       about: 'Bereitschaftswert, falls Zepp ihn liefert.' }
   ];
   D.M = {};
@@ -437,7 +436,7 @@
   /* ---------------- Charts (light theme) ----------------
      D.chart(el, { from, to, get(date), key, type:'line'|'bar', baseline:{mean, sd},
        target:{value,label}, avg, height, onPick(date, v, avg), fmt, fmtAxis }) */
-  var INK = '#1C1B1A';
+  var INK = '#FAFAFA';
   function niceStep(span, count) {
     var raw = span / Math.max(1, count);
     var mag = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -480,6 +479,7 @@
     var iw = W - padL - padR, ih = H - padT - padB, bw = iw / n;
     var X = function (i) { return padL + (i + 0.5) * bw; };
     var Y = function (v) { return padT + ih - (v - lo) / (hi - lo) * ih; };
+    var C = o.color || INK;
     var parts = ['<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + D.esc(o.label || 'Verlauf') + '">'];
     ticks.forEach(function (tv) {
       var y = Y(tv).toFixed(1);
@@ -488,12 +488,12 @@
     });
     if (o.baseline) {
       var by1 = Y(o.baseline.mean + o.baseline.sd), by2 = Y(o.baseline.mean - o.baseline.sd);
-      parts.push('<rect x="' + padL + '" y="' + by1.toFixed(1) + '" width="' + iw + '" height="' + Math.max(0, by2 - by1).toFixed(1) + '" fill="rgba(118,168,236,0.20)" rx="6"/>');
+      parts.push('<rect x="' + padL + '" y="' + by1.toFixed(1) + '" width="' + iw + '" height="' + Math.max(0, by2 - by1).toFixed(1) + '" fill="rgba(255,255,255,0.07)" rx="6"/>');
     }
     if (o.target && D.isNum(o.target.value)) {
       var ty = Y(o.target.value).toFixed(1);
-      parts.push('<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + ty + '" y2="' + ty + '" stroke="#E39A55" stroke-dasharray="5 4" stroke-width="1.6"/>');
-      parts.push('<text x="' + (W - padR) + '" y="' + (Number(ty) - 6) + '" text-anchor="end" style="fill:#A65A17">' + D.esc(o.target.label || 'Ziel') + '</text>');
+      parts.push('<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + ty + '" y2="' + ty + '" stroke="#FF9559" stroke-opacity="0.8" stroke-dasharray="5 4" stroke-width="1.6"/>');
+      parts.push('<text x="' + (W - padR) + '" y="' + (Number(ty) - 6) + '" text-anchor="end" style="fill:#FF9559">' + D.esc(o.target.label || 'Ziel') + '</text>');
     }
     if (o.type === 'bar') {
       var bwid = Math.max(1.5, Math.min(28, bw * 0.62));
@@ -501,7 +501,7 @@
       vals.forEach(function (v, i) {
         if (v == null) return;
         var y = Y(v), h = Math.max(1.5, base - y);
-        parts.push('<rect x="' + (X(i) - bwid / 2).toFixed(1) + '" y="' + (base - h).toFixed(1) + '" width="' + bwid.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + Math.min(4, bwid / 2).toFixed(1) + '" fill="' + INK + '" fill-opacity="' + (i === n - 1 ? 0.85 : (o.avg ? 0.16 : 0.32)) + '"/>');
+        parts.push('<rect x="' + (X(i) - bwid / 2).toFixed(1) + '" y="' + (base - h).toFixed(1) + '" width="' + bwid.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + Math.min(4, bwid / 2).toFixed(1) + '" fill="' + C + '" fill-opacity="' + (i === n - 1 ? 0.95 : (o.avg ? 0.35 : 0.55)) + '"/>');
       });
     } else {
       var solid = '', dashed = '', prevI = -1;
@@ -513,12 +513,12 @@
         else solid += 'L' + pt;
         prevI = i;
       });
-      if (dashed) parts.push('<path d="' + dashed + '" fill="none" stroke="' + INK + '" stroke-opacity="0.22" stroke-width="1.4" stroke-dasharray="3 4"/>');
-      parts.push('<path d="' + solid + '" fill="none" stroke="' + INK + '" stroke-opacity="' + (o.avg ? 0.3 : 0.9) + '" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>');
+      if (dashed) parts.push('<path d="' + dashed + '" fill="none" stroke="' + C + '" stroke-opacity="0.35" stroke-width="1.4" stroke-dasharray="3 4"/>');
+      parts.push('<path d="' + solid + '" fill="none" stroke="' + C + '" stroke-opacity="' + (o.avg ? 0.45 : 0.95) + '" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>');
       if (n <= 45) {
         vals.forEach(function (v, i) {
           if (v == null) return;
-          parts.push('<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="' + (i === n - 1 ? 3.8 : 2.4) + '" fill="' + INK + '" fill-opacity="' + (i === n - 1 ? 1 : (o.avg ? 0.35 : 0.8)) + '"/>');
+          parts.push('<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="' + (i === n - 1 ? 3.8 : 2.4) + '" fill="' + C + '" fill-opacity="' + (i === n - 1 ? 1 : (o.avg ? 0.5 : 0.85)) + '"/>');
         });
       }
     }
@@ -529,7 +529,7 @@
         ap += (started ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1);
         started = true;
       });
-      if (ap) parts.push('<path d="' + ap + '" fill="none" stroke="' + INK + '" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>');
+      if (ap) parts.push('<path d="' + ap + '" fill="none" stroke="' + (o.type === 'bar' ? INK : C) + '" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>');
     }
     var labelCount = Math.min(n, W < 420 ? 4 : 6);
     var used = {};
@@ -542,7 +542,7 @@
       var txt = n > 200 ? D.fmtMonth(days[idx]) + ' ' + String(D.parseYmd(days[idx]).getFullYear()).slice(2) : D.fmtDayMonth(days[idx]);
       parts.push('<text x="' + lx.toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + anchor + '">' + D.esc(txt) + '</text>');
     }
-    parts.push('<g class="cross" style="display:none"><line class="cx" y1="' + padT + '" y2="' + (padT + ih) + '" stroke="rgba(28,27,26,0.3)"/><circle class="cd" r="5" fill="' + INK + '" stroke="#F7F5F2" stroke-width="2.5"/></g>');
+    parts.push('<g class="cross" style="display:none"><line class="cx" y1="' + padT + '" y2="' + (padT + ih) + '" stroke="rgba(255,255,255,0.35)"/><circle class="cd" r="5" fill="' + C + '" stroke="#050506" stroke-width="2.5"/></g>');
     parts.push('<rect x="' + padL + '" y="0" width="' + iw + '" height="' + H + '" fill="transparent"/>');
     parts.push('</svg><div class="chart-tip"></div>');
     el.innerHTML = parts.join('');
@@ -595,14 +595,14 @@
     items.forEach(function (it, i) {
       var w = Math.min(30, bw * 0.62), x = padL + i * bw + (bw - w) / 2, h = Math.max(it.value > 0 ? 3 : 0, ih - (Y(it.value) - padT));
       var reached = o.goal && it.value >= o.goal;
-      p.push('<g><title>' + D.esc(it.title || '') + '</title><rect x="' + x.toFixed(1) + '" y="' + (padT + ih - h).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + Math.min(6, w / 2) + '" fill="' + INK + '" fill-opacity="' + (it.highlight ? 0.9 : reached ? 0.6 : 0.22) + '"/>');
-      if (o.showValues && it.value > 0) p.push('<text x="' + (x + w / 2).toFixed(1) + '" y="' + (padT + ih - h - 5).toFixed(1) + '" text-anchor="middle" style="fill:#4A4743">' + D.esc(o.fmtValue ? o.fmtValue(it.value) : it.value) + '</text>');
-      p.push('<text x="' + (x + w / 2).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle"' + (it.highlight ? ' style="fill:#1C1B1A;font-weight:600"' : '') + '>' + D.esc(it.label) + '</text></g>');
+      p.push('<g><title>' + D.esc(it.title || '') + '</title><rect x="' + x.toFixed(1) + '" y="' + (padT + ih - h).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + Math.min(6, w / 2) + '" fill="' + (reached ? '#6BE3A4' : INK) + '" fill-opacity="' + (it.highlight ? 0.95 : reached ? 0.7 : 0.25) + '"/>');
+      if (o.showValues && it.value > 0) p.push('<text x="' + (x + w / 2).toFixed(1) + '" y="' + (padT + ih - h - 5).toFixed(1) + '" text-anchor="middle" style="fill:#D2CFC9">' + D.esc(o.fmtValue ? o.fmtValue(it.value) : it.value) + '</text>');
+      p.push('<text x="' + (x + w / 2).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle"' + (it.highlight ? ' style="fill:#FAFAFA;font-weight:700"' : '') + '>' + D.esc(it.label) + '</text></g>');
     });
     if (o.goal) {
       var gy = Y(o.goal).toFixed(1);
-      p.push('<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + gy + '" y2="' + gy + '" stroke="#E39A55" stroke-dasharray="5 4" stroke-width="1.6"/>');
-      p.push('<text x="' + (W - padR) + '" y="' + (Number(gy) - 6) + '" text-anchor="end" style="fill:#A65A17">Ziel</text>');
+      p.push('<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + gy + '" y2="' + gy + '" stroke="#FF9559" stroke-opacity="0.85" stroke-dasharray="5 4" stroke-width="1.6"/>');
+      p.push('<text x="' + (W - padR) + '" y="' + (Number(gy) - 6) + '" text-anchor="end" style="fill:#FF9559">Ziel</text>');
     }
     p.push('</svg>');
     el.classList.add('chart');

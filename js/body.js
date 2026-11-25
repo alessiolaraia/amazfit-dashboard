@@ -184,7 +184,7 @@
 
   /* ---------------- Tagesform card ---------------- */
   var FORM = {
-    gut: { emoji: '💪', word: 'Gut erholt', text: 'Dein Körper ist heute fitter als sonst — guter Tag für ein hartes Training oder eine lange Lernsession.' },
+    gut: { emoji: '💪', word: 'Gut erholt', text: 'Dein Körper ist heute fitter als sonst — guter Tag für ein hartes Training.' },
     normal: { emoji: '🙂', word: 'Normal', text: 'Alles im üblichen Bereich. Ganz normaler Tag — mach dein Programm.' },
     muede: { emoji: '😴', word: 'Eher müde', text: 'Mehrere Werte liegen unter deinem Normalwert. Heute lieber etwas lockerer machen und früh schlafen.' }
   };
@@ -203,6 +203,7 @@
     var st = f.status ? FORM[f.status] : null;
     $('formEmoji').textContent = st ? st.emoji : '·';
     $('formWord').textContent = st ? st.word : (f.parts.length ? 'Noch unklar' : 'Keine Daten');
+    $('formWord').className = 'form-word' + (f.status ? ' is-' + f.status : '');
     $('formText').textContent = st ? st.text : (f.parts.length
       ? 'Sobald es mindestens 7 Tage Werte gibt, vergleicht das Dashboard dich mit deinem eigenen Normalwert.'
       : 'Sobald deine Uhr Schlaf, HRV und Ruhepuls liefert, siehst du hier deine Tagesform.');
@@ -215,8 +216,14 @@
       b.type = 'button';
       b.setAttribute('aria-label', m.label + ' — Verlauf öffnen');
       b.addEventListener('click', function () { D.go('verlauf', { metric: k }); });
+      b.style.borderLeftColor = m.color;
       var left = el('div');
-      left.appendChild(el('div', 'mr-name', m.label));
+      var nm = el('div', 'mr-name');
+      var dt = el('i');
+      dt.style.background = m.color;
+      nm.appendChild(dt);
+      nm.appendChild(document.createTextNode(m.label));
+      left.appendChild(nm);
       var val = el('div', 'mr-value');
       if (p) {
         if (k === 'sleep') val.textContent = D.fmtHM(p.value);
@@ -246,6 +253,7 @@
     var pct = Math.round(v / s.stepGoal * 100);
     $('stepsSub').textContent = st ? (pct >= 100 ? 'Ziel geschafft 🎉' : pct + ' % von ' + D.fmtNum(s.stepGoal, 0)) : 'heute noch keine';
     $('stepsFill').style.width = Math.min(100, pct) + '%';
+    $('stepsFill').classList.toggle('is-full', pct >= 100);
   }
   function renderWeight() {
     var s = D.getSettings();
