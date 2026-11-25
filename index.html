@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -9,2847 +9,581 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Dashboard">
 <meta name="color-scheme" content="dark">
-<title>My Dashboard</title>
+<meta name="description" content="Dein persönliches Dashboard: Amazfit-Daten, Ziele, Verlauf, Experimente und Fortschrittsfotos.">
+<title>Mein Dashboard</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050506'/%3E%3Ccircle cx='32' cy='32' r='19' fill='none' stroke='%23ffffff' stroke-opacity='.12' stroke-width='6'/%3E%3Cpath d='M32 13a19 19 0 0 1 18 25' fill='none' stroke='%23FF9559' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
-<style>
-:root {
-  --bg: #050506;
-  --text-primary: #FAFAFA;
-  --text-secondary: #B8B6B0;
-  --text-tertiary: #76746E;
-  --success: #6BE3A4;
-  --warning: #F2C063;
-  --danger: #FF6B6B;
-  --card-bg: rgba(255, 255, 255, 0.04);
-  --hairline: rgba(255, 255, 255, 0.06);
-  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-*, *::before, *::after { box-sizing: border-box; }
-[hidden] { display: none !important; }
-
-html {
-  background: var(--bg);
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-  overflow-x: hidden;
-}
-
-body {
-  margin: 0 auto;
-  max-width: 1100px;
-  min-height: 100vh;
-  padding:
-    max(24px, env(safe-area-inset-top))
-    max(16px, env(safe-area-inset-right))
-    calc(40px + env(safe-area-inset-bottom))
-    max(16px, env(safe-area-inset-left));
-  font-family: var(--font);
-  font-size: 14px;
-  line-height: 1.4;
-  color: var(--text-primary);
-  background: transparent;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-tap-highlight-color: transparent;
-  overflow-x: hidden;
-}
-
-/* Warm + cool washes, slowly drifting */
-body::before {
-  content: '';
-  position: fixed;
-  inset: -80px;
-  z-index: -2;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 82% 14%, rgba(224, 118, 88, 0.16), transparent 42%),
-    radial-gradient(circle at 18% 90%, rgba(180, 180, 200, 0.06), transparent 48%);
-  filter: blur(40px);
-  animation: wash-drift 36s ease-in-out infinite alternate;
-  will-change: transform;
-}
-@keyframes wash-drift {
-  from { transform: translate3d(0, 0, 0) scale(1); }
-  to   { transform: translate3d(-3%, 2.5%, 0) scale(1.06); }
-}
-
-/* Film grain */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.014) 1px, transparent 1.2px);
-  background-size: 3px 3px;
-}
-
-button {
-  font: inherit;
-  color: inherit;
-  background: none;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-}
-button:disabled { cursor: not-allowed; }
-:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.55); outline-offset: 2px; }
-
-.mono { font-family: var(--mono); }
-
-.card {
-  background: var(--card-bg);
-  border: 0;
-  border-radius: 16px;
-  padding: 20px;
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  backdrop-filter: blur(24px) saturate(1.2);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-}
-
-/* ---------------- Component 1 — Title ---------------- */
-.dash-title {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.15;
-  margin: 0 0 14px;
-  background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-}
-
-/* ---------------- Component 2 — Goal Ticker ---------------- */
-.ticker-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 4px;
-  margin-bottom: 18px;
-}
-.goal-ticker {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 12px;
-  border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.30) 100%);
-  background-image:
-    linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.30) 100%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-  position: relative;
-  overflow: hidden;
-}
-.goal-ticker::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -40%;
-  width: 30%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
-  animation: ticker-sweep 8s linear infinite;
-  pointer-events: none;
-}
-@keyframes ticker-sweep {
-  from { left: -40%; }
-  to   { left: 110%; }
-}
-.goal-ticker-led { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.goal-ticker-led-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #6BE3A4;
-  box-shadow: 0 0 8px rgba(107,227,164,0.7);
-  animation: led-pulse 1.6s ease-in-out infinite;
-}
-@keyframes led-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.45; transform: scale(0.85); }
-}
-.goal-ticker-label {
-  font-family: var(--mono);
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  color: var(--text-tertiary);
-  flex-shrink: 0;
-}
-.goal-ticker-stage {
-  flex: 1;
-  min-width: 0;
-  height: 22px;
-  position: relative;
-  overflow: hidden;
-}
-.goal-ticker-row {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 22px;
-  font-family: var(--mono);
-  font-size: 12.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-.goal-ticker-row.is-leaving  { animation: ticker-leave 0.45s cubic-bezier(0.55, 0, 0.55, 1) forwards; }
-.goal-ticker-row.is-entering { animation: ticker-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-@keyframes ticker-leave {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(-100%); }
-}
-@keyframes ticker-enter {
-  from { opacity: 0; transform: translateY(100%); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.goal-ticker-status {
-  width: 18px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-tertiary);
-}
-.goal-ticker-status[data-status="done"] { color: #6BE3A4; }
-.goal-ticker-status[data-status="pending"],
-.goal-ticker-status[data-status="empty"] { color: var(--text-tertiary); }
-.goal-ticker-text {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.goal-ticker-meta {
-  flex-shrink: 0;
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-  color: var(--text-secondary);
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.04);
-}
-
-/* ---------------- Component 3 — Day Ring ---------------- */
-.day-ring-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 26px;
-  margin: 10px 0 34px;
-}
-.day-ring {
-  position: relative;
-  width: 168px;
-  height: 168px;
-  flex-shrink: 0;
-}
-.day-ring svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
-}
-.ring-track {
-  fill: none;
-  stroke: rgba(255,255,255,0.06);
-  stroke-width: 8;
-}
-.ring-fill {
-  fill: none;
-  stroke-width: 8;
-  stroke-linecap: round;
-  stroke: #4D4B47;
-  transition:
-    stroke 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-    stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.ring-center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  text-align: center;
-}
-.ring-pct {
-  font-size: 40px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-.ring-pct .pct-sign {
-  font-size: 0.5em;
-  font-weight: 700;
-  letter-spacing: 0;
-  margin-left: 1px;
-  color: var(--text-secondary);
-}
-.ring-phase {
-  margin-top: 5px;
-  font-family: var(--mono);
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.ring-clock {
-  margin-top: 2px;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: var(--text-tertiary);
-}
-.day-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-width: 280px;
-}
-.day-status { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-.day-remaining { font-family: var(--mono); font-size: 12px; color: var(--text-secondary); }
-.day-hours { font-family: var(--mono); font-size: 11px; color: var(--text-tertiary); }
-
-/* ---------------- Sections ---------------- */
-.section { margin-bottom: 34px; }
-.section-title {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 0 14px;
-}
-.section-title::before {
-  content: '';
-  width: 18px;
-  height: 1px;
-  background: var(--text-tertiary);
-  opacity: 0.6;
-  flex-shrink: 0;
-}
-.section-title::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent);
-}
-
-/* ---------------- Component 4 — Body Panel ---------------- */
-.body-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-  min-height: 36px;
-}
-.body-head .section-title { flex: 1; min-width: 64px; margin: 0; }
-.body-controls {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 1;
-  min-width: 0;
-}
-.body-updated {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-  margin-right: 4px;
-}
-.body-updated.is-warning { color: var(--warning); }
-.body-updated.is-danger { color: var(--danger); }
-.icon-btn {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  font-size: 17px;
-  line-height: 1;
-  transition: background 0.2s, color 0.2s;
-  flex-shrink: 0;
-}
-.icon-btn:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
-.icon-btn .spin-glyph { display: inline-block; }
-.icon-btn.is-spinning .spin-glyph { animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.pill-btn {
-  min-height: 36px;
-  padding: 0 4px;
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-.pill-btn > span {
-  display: inline-flex;
-  align-items: center;
-  height: 26px;
-  padding: 0 11px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.10);
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--text-primary);
-  transition: background 0.2s, border-color 0.2s;
-}
-.pill-btn:hover > span { background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.18); }
-
-.body-error {
-  font-size: 12px;
-  color: var(--danger);
-  margin: 0 0 8px;
-}
-.body-hint {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  margin: 0 0 10px;
-}
-.body-message {
-  margin-bottom: 10px;
-  font-size: 12.5px;
-  color: var(--text-secondary);
-  padding: 14px 18px;
-}
-
-.body-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 10px;
-}
-@media (min-width: 720px) {
-  .body-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-.body-tile {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 132px;
-}
-.tile-label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-bottom: 10px;
-  white-space: nowrap;
-}
-.tile-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.18);
-  flex-shrink: 0;
-}
-.tile-dot[data-tone="success"] { background: var(--success); box-shadow: 0 0 6px rgba(107,227,164,0.55); }
-.tile-dot[data-tone="warning"] { background: var(--warning); box-shadow: 0 0 6px rgba(242,192,99,0.55); }
-.tile-dot[data-tone="danger"]  { background: var(--danger);  box-shadow: 0 0 6px rgba(255,107,107,0.55); }
-.tile-value {
-  font-size: 30px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-  white-space: nowrap;
-}
-.tile-unit {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0;
-  color: var(--text-tertiary);
-  margin-left: 4px;
-}
-.tile-sub {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-top: 6px;
-  min-height: 15px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.tile-sub .tag { color: var(--text-tertiary); }
-.tile-foot { margin-top: auto; padding-top: 8px; min-height: 26px; display: flex; align-items: flex-end; }
-.chip {
-  display: inline-flex;
-  align-items: center;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 999px;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-.chip[data-tone="success"] { color: var(--success); background: rgba(107,227,164,0.12); }
-.chip[data-tone="warning"] { color: var(--warning); background: rgba(242,192,99,0.12); }
-.chip[data-tone="danger"]  { color: var(--danger);  background: rgba(255,107,107,0.12); }
-.step-bar {
-  width: 100%;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.08);
-  overflow: hidden;
-}
-.step-bar-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.7);
-  transition: width 0.7s var(--ease-out);
-}
-.step-bar-fill.is-full { background: var(--success); box-shadow: 0 0 6px rgba(107,227,164,0.5); }
-
-.training-card { padding: 18px 20px; }
-.train-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  padding-bottom: 16px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--hairline);
-}
-.mini-label {
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-}
-.train-num {
-  font-size: 22px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  margin-top: 4px;
-  color: var(--text-primary);
-}
-.train-num[data-tone="success"] { color: var(--success); }
-.train-num[data-tone="secondary"] { color: var(--text-secondary); }
-.train-num[data-tone="warning"] { color: var(--warning); }
-.train-num[data-tone="danger"] { color: var(--danger); }
-.train-cols {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 18px;
-}
-@media (min-width: 720px) {
-  .train-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 28px; }
-}
-.mini-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.mini-caption {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-.sleep-strip svg { display: block; width: 100%; max-width: 360px; height: auto; }
-.sleep-strip text {
-  font-family: var(--mono);
-  font-size: 9.5px;
-  fill: var(--text-tertiary);
-}
-.sleep-strip .hit { fill: transparent; cursor: pointer; }
-.workouts { list-style: none; margin: 0; padding: 0; }
-.workout {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--hairline);
-  min-width: 0;
-}
-.workout:last-child { border-bottom: 0; }
-.wo-emoji { width: 22px; text-align: center; flex-shrink: 0; font-size: 15px; }
-.wo-name {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.wo-meta {
-  flex-shrink: 0;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-secondary);
-  text-align: right;
-  white-space: nowrap;
-}
-.wo-empty { font-size: 12px; color: var(--text-tertiary); font-style: italic; padding: 6px 0; }
-
-.onboard-card { padding: 22px; }
-.onboard-title { font-size: 17px; font-weight: 700; margin: 0 0 12px; letter-spacing: -0.01em; }
-.onboard-steps { margin: 0 0 18px; padding: 0; list-style: none; display: grid; gap: 8px; }
-.onboard-steps li { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
-
-/* Buttons shared */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 11px 20px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #FFFFFF 0%, #E8E5DD 100%);
-  color: #0A0A0B;
-  font-weight: 700;
-  font-size: 13.5px;
-  line-height: 1.1;
-  white-space: nowrap;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.9),
-    0 1px 2px rgba(0,0,0,0.5),
-    0 6px 18px rgba(0,0,0,0.35);
-  transition: transform 0.18s var(--ease-out), filter 0.18s, box-shadow 0.18s;
-}
-.btn-primary:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.04); }
-.btn-primary:active:not(:disabled) { transform: translateY(0); }
-.btn-primary:disabled { opacity: 0.55; }
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 11px 20px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.04);
-  color: var(--text-primary);
-  border: 1px solid rgba(255,255,255,0.10);
-  font-weight: 700;
-  font-size: 13.5px;
-  line-height: 1.1;
-  white-space: nowrap;
-  transition: transform 0.18s var(--ease-out), background 0.18s, border-color 0.18s;
-}
-.btn-secondary:hover:not(:disabled) { transform: translateY(-1px); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
-.btn-secondary:disabled { opacity: 0.55; }
-
-/* ---------------- Settings sheet ---------------- */
-.sheet-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  background: rgba(0,0,0,0.55);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s var(--ease-out), visibility 0s linear 0.3s;
-}
-.sheet-backdrop.is-open { opacity: 1; visibility: visible; transition: opacity 0.3s var(--ease-out), visibility 0s; }
-.sheet {
-  position: fixed;
-  z-index: 41;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-height: 92vh;
-  overflow-y: auto;
-  padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
-  border-radius: 20px 20px 0 0;
-  background: rgba(22, 22, 24, 0.86);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  backdrop-filter: blur(24px) saturate(1.2);
-  box-shadow: 0 -12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
-  transform: translateY(105%);
-  visibility: hidden;
-  transition: transform 0.3s var(--ease-out), visibility 0s linear 0.3s;
-}
-.sheet.is-open { transform: translateY(0); visibility: visible; transition: transform 0.3s var(--ease-out), visibility 0s; }
-@media (min-width: 600px) {
-  .sheet {
-    left: 50%;
-    right: auto;
-    bottom: auto;
-    top: 50%;
-    width: 420px;
-    border-radius: 18px;
-    padding: 22px 24px 22px;
-    transform: translate(-50%, calc(-50% + 40px));
-    opacity: 0;
-    transition: transform 0.3s var(--ease-out), opacity 0.3s var(--ease-out), visibility 0s linear 0.3s;
-  }
-  .sheet.is-open {
-    transform: translate(-50%, -50%);
-    opacity: 1;
-    transition: transform 0.3s var(--ease-out), opacity 0.3s var(--ease-out), visibility 0s;
-  }
-  .sheet-grabber { display: none; }
-}
-.sheet-grabber {
-  width: 38px;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.18);
-  margin: 0 auto 14px;
-}
-.sheet h2 { margin: 0 0 16px; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
-.field { display: block; margin-bottom: 14px; }
-.field-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-}
-.field-row { display: flex; gap: 8px; }
-.text-input {
-  flex: 1;
-  min-width: 0;
-  width: 100%;
-  padding: 11px 14px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 16px;
-  outline: none;
-  transition: border-color 0.2s, background 0.2s;
-}
-.text-input::placeholder { color: var(--text-tertiary); }
-.text-input:focus { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.06); }
-.field-toggle {
-  flex-shrink: 0;
-  min-width: 64px;
-  min-height: 44px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-.sheet-note { font-size: 11.5px; color: var(--text-tertiary); margin: 4px 0 10px; }
-.sheet-result { font-size: 12.5px; min-height: 18px; margin-bottom: 12px; }
-.sheet-result.is-ok { color: var(--success); }
-.sheet-result.is-error { color: var(--danger); }
-.sheet-result.is-muted { color: var(--text-secondary); }
-.sheet-actions { display: flex; gap: 10px; justify-content: flex-end; }
-.sheet-actions > * { flex: 1; }
-@media (min-width: 600px) { .sheet-actions > * { flex: 0 0 auto; } }
-
-/* ---------------- Component 5 — To Do List ---------------- */
-.gm-card { margin-bottom: 12px; position: relative; overflow: hidden; }
-.gm-card.gm-all-done {
-  background:
-    radial-gradient(120% 70% at 50% -10%, rgba(107,227,164,0.13), transparent 60%),
-    var(--card-bg);
-}
-.gm-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.gm-eyebrow {
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--text-tertiary);
-  margin-bottom: 6px;
-}
-.gm-progress-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
-.gm-progress-num {
-  font-size: 42px;
-  font-weight: 700;
-  letter-spacing: -0.045em;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  transition: color 0.4s;
-}
-.gm-progress-total {
-  font-family: var(--mono);
-  font-size: 18px;
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-.gm-progress-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-left: 4px;
-  transition: color 0.4s;
-}
-.gm-all-done .gm-progress-num,
-.gm-all-done .gm-progress-label { color: var(--success); }
-.gm-card-tomorrow .gm-progress-row { display: none; }
-.gm-sub { font-size: 12px; color: var(--text-tertiary); }
-.gm-count {
-  font-family: var(--mono);
-  font-size: 11px;
-  text-transform: uppercase;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-tertiary);
-  letter-spacing: 0.06em;
-  padding-top: 2px;
-}
-
-.gm-streak {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.04);
-  color: var(--text-tertiary);
-  border: 1px solid transparent;
-  transition: background 0.3s, color 0.3s, border-color 0.3s;
-}
-.gm-streak-bolt { font-size: 13px; line-height: 1; transition: filter 0.3s; }
-.gm-streak-num { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; }
-.gm-streak-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.10em; font-weight: 600; }
-.gm-streak.gm-streak-active {
-  background: rgba(242,192,99,0.10);
-  color: #F2C063;
-  border-color: rgba(242,192,99,0.32);
-}
-.gm-streak.gm-streak-active .gm-streak-bolt { filter: drop-shadow(0 0 6px rgba(242,192,99,0.6)); }
-
-.gm-bar { display: flex; gap: 4px; height: 6px; margin-bottom: 16px; }
-.gm-bar:empty { display: none; }
-.gm-bar-seg {
-  flex: 1;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.08);
-  transition: background 0.35s, box-shadow 0.35s;
-}
-.gm-bar-seg.gm-bar-seg-done { background: #6BE3A4; box-shadow: 0 0 6px rgba(107,227,164,0.40); }
-
-.goal-list { list-style: none; margin: 0; padding: 0; }
-.empty-state {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  font-style: italic;
-  padding: 14px 0;
-  text-align: center;
-}
-.goal-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  margin-bottom: 6px;
-  background: rgba(255,255,255,0.035);
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.06);
-  transition: background 0.2s, opacity 0.25s, box-shadow 0.2s, border-color 0.2s;
-  position: relative;
-}
-.goal-item:hover { background: rgba(255,255,255,0.06); }
-.goal-drag {
-  width: 14px;
-  flex-shrink: 0;
-  position: relative;
-  color: var(--text-tertiary);
-  letter-spacing: -2px;
-  font-size: 13px;
-  line-height: 1;
-  cursor: grab;
-  opacity: 0;
-  transition: opacity 0.2s;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none;
-}
-.goal-drag::before { content: ''; position: absolute; inset: -14px -11px; }
-.goal-item:hover .goal-drag { opacity: 1; }
-.goal-item.dragging { opacity: 0.4; }
-.goal-item.drag-over-top { box-shadow: inset 0 2px 0 0 rgba(255,255,255,0.7); }
-.goal-item.drag-over-bottom { box-shadow: inset 0 -2px 0 0 rgba(255,255,255,0.7); }
-
-.goal-check {
-  position: relative;
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-.goal-check::before { content: ''; position: absolute; inset: -7px; }
-.goal-check input {
-  position: absolute;
-  inset: -7px;
-  width: 36px;
-  height: 36px;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 1;
-}
-.goal-check input:disabled { cursor: not-allowed; }
-.goal-check-box {
-  position: absolute;
-  inset: 0;
-  border-radius: 7px;
-  border: 1.5px solid rgba(255,255,255,0.18);
-  background: rgba(0,0,0,0.35);
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-}
-.goal-check input:checked + .goal-check-box {
-  background: #6BE3A4;
-  border-color: #6BE3A4;
-  box-shadow: 0 0 12px rgba(107,227,164,0.40);
-}
-.goal-check input:checked + .goal-check-box::after {
-  content: '';
-  position: absolute;
-  left: 6.5px;
-  top: 2.5px;
-  width: 5px;
-  height: 10px;
-  border: solid #0A0A0B;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg) scale(1);
-}
-.goal-item.just-checked .goal-check input:checked + .goal-check-box::after {
-  animation: check-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes check-pop {
-  from { transform: rotate(45deg) scale(0); }
-  to   { transform: rotate(45deg) scale(1); }
-}
-.goal-check input:focus-visible + .goal-check-box { outline: 2px solid rgba(255,255,255,0.55); outline-offset: 2px; }
-.goal-check input:disabled + .goal-check-box { border-style: dashed; opacity: 0.7; }
-
-.goal-text {
-  flex: 1;
-  min-width: 0;
-  font-size: 14px;
-  line-height: 1.4;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  cursor: text;
-  border-radius: 6px;
-  padding: 1px 2px;
-  margin: -1px -2px;
-  outline: none;
-}
-.goal-text.editing {
-  outline: 1px solid rgba(255,255,255,0.35);
-  outline-offset: 3px;
-  background: rgba(255,255,255,0.04);
-}
-.row-btn {
-  position: relative;
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  color: var(--text-tertiary);
-  transition: opacity 0.2s, color 0.2s, filter 0.2s;
-}
-.row-btn::before { content: ''; position: absolute; inset: -7px; }
-.gm-queue-btn { font-size: 14px; opacity: 0.55; }
-.gm-queue-btn:hover:not(:disabled) { opacity: 1; }
-.gm-queue-btn.is-active { color: #F2C063; opacity: 1; filter: drop-shadow(0 0 4px rgba(242,192,99,0.65)); }
-.gm-queue-btn:disabled { opacity: 0.2; }
-.goal-delete { font-size: 19px; opacity: 0.5; }
-.goal-item:hover .goal-delete { opacity: 1; }
-.goal-delete:hover { color: var(--danger); }
-
-.goal-item.done { opacity: 0.45; background: rgba(107,227,164,0.04); }
-.goal-item.done .goal-text { text-decoration: line-through; text-decoration-color: rgba(255,255,255,0.4); }
-.goal-item.queued {
-  background: rgba(242,192,99,0.10);
-  box-shadow: inset 3px 0 0 0 #F2C063;
-}
-.goal-item.queued .goal-text { color: #FFE2A8; }
-.goal-item.is-queue-flashing { animation: gm-queue-flash 0.48s ease-out; }
-@keyframes gm-queue-flash {
-  0%   { transform: scale(1); }
-  40%  { background: rgba(242,192,99,0.32); transform: scale(1.015); }
-  100% { transform: scale(1); }
-}
-
-@media (hover: none) {
-  .goal-drag, .goal-delete { opacity: 0.5; }
-  .goal-item:hover .goal-drag, .goal-item:hover .goal-delete { opacity: 0.5; }
-  .goal-item:hover { background: rgba(255,255,255,0.035); }
-  .goal-item.done:hover { background: rgba(107,227,164,0.04); }
-  .goal-item.queued:hover { background: rgba(242,192,99,0.10); }
-}
-
-.gm-more {
-  list-style: none;
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-tertiary);
-  padding: 10px;
-  min-height: 40px;
-  border: 1px dashed rgba(255,255,255,0.12);
-  border-radius: 12px;
-  cursor: pointer;
-  margin-bottom: 6px;
-  transition: color 0.2s, border-color 0.2s;
-}
-.gm-more:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.25); }
-
-.gm-push-btn {
-  display: block;
-  width: 100%;
-  min-height: 40px;
-  margin-top: 8px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px dashed rgba(255,255,255,0.14);
-  color: var(--text-tertiary);
-  font-size: 12.5px;
-  font-weight: 600;
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
-}
-.gm-push-btn:hover { color: var(--text-primary); border-style: solid; border-color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.03); }
-.gm-push-btn[hidden] { display: none; }
-
-.goal-input-wrap.gm-input-wrap {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-}
-.goal-input-wrap .text-input { font-size: 14px; }
-@media (hover: none), (max-width: 720px) {
-  .goal-input-wrap .text-input { font-size: 16px; }
-}
-.gm-status { font-size: 11px; color: var(--text-tertiary); min-height: 16px; margin-top: 8px; }
-.gm-status.is-error { color: var(--danger); }
-
-/* ---------------- Small screens ---------------- */
-@media (max-width: 480px) {
-  .dash-title { font-size: 22px; }
-  .goal-ticker { padding: 9px 12px; }
-  .goal-ticker-label { font-size: 9px; letter-spacing: 0.14em; }
-  .goal-ticker-row { font-size: 12px; }
-  .goal-ticker-meta { font-size: 10px; padding: 2px 7px; }
-  .day-ring { width: 144px; height: 144px; }
-  .ring-pct { font-size: 32px; }
-  .day-status { font-size: 13px; }
-  .day-ring-wrap { gap: 20px; }
-  .tile-value { font-size: 26px; }
-  .body-tile { padding: 14px; min-height: 124px; }
-  .tile-label { letter-spacing: 0.14em; }
-  .train-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 14px; }
-  .card { padding: 18px; }
-  .gm-progress-num { font-size: 38px; }
-  .goal-input-wrap.gm-input-wrap { flex-wrap: wrap; }
-  .goal-input-wrap .text-input { flex: 1 1 100%; }
-  .goal-input-wrap .btn-primary,
-  .goal-input-wrap .btn-secondary { flex: 1 1 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-  }
-}
-</style>
+<link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
+<div class="app">
 
-<h1 class="dash-title">My Dashboard</h1>
-
-<!-- ============ Component 2 — Goal Ticker ============ -->
-<div class="ticker-row">
-  <div class="goal-ticker" id="goalTicker" aria-live="polite" aria-atomic="true">
-    <div class="goal-ticker-led"><span class="goal-ticker-led-dot"></span></div>
-    <div class="goal-ticker-label">GOALS</div>
-    <div class="goal-ticker-stage" id="goalTickerStage">
-      <div class="goal-ticker-row">
-        <span class="goal-ticker-status" data-status="">—</span>
-        <span class="goal-ticker-text">Loading…</span>
-      </div>
+  <!-- ============ Sidebar (desktop) ============ -->
+  <aside class="sidebar" aria-label="Bereiche">
+    <div class="brand">DU<span>.</span></div>
+    <p class="nav-label">DEIN BEREICH</p>
+    <nav aria-label="Bereiche">
+      <button type="button" class="side-link" data-nav="heute" data-icon="home">Heute</button>
+      <button type="button" class="side-link" data-nav="verlauf" data-icon="chart">Verlauf</button>
+      <button type="button" class="side-link" data-nav="ziele" data-icon="check">Ziele</button>
+      <button type="button" class="side-link" data-nav="experimente" data-icon="flask">Experimente</button>
+      <button type="button" class="side-link" data-nav="fotos" data-icon="image">Fotos</button>
+    </nav>
+    <div class="side-index" role="button" tabindex="0" onclick="Dash.go('verlauf', {metric: 'index'})" onkeydown="if(event.key==='Enter')Dash.go('verlauf', {metric: 'index'})">
+      <div class="side-index-label">Körper-Index</div>
+      <div class="side-index-num" id="sideIndexNum">—</div>
+      <div class="side-index-sub" id="sideIndexSub">100 = deine Basis</div>
     </div>
-    <div class="goal-ticker-meta" id="goalTickerMeta">0/0</div>
-  </div>
-</div>
-
-<!-- ============ Component 3 — Day Ring ============ -->
-<div class="day-ring-wrap">
-  <div class="day-ring" id="dayRing" role="img" aria-label="Day progress">
-    <svg viewBox="0 0 120 120" aria-hidden="true">
-      <defs>
-        <filter id="ringGlow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-      <circle class="ring-track" cx="60" cy="60" r="52"/>
-      <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52" transform="rotate(-90 60 60)" filter="url(#ringGlow)"/>
-    </svg>
-    <div class="ring-center">
-      <div class="ring-pct" id="ringPct">—</div>
-      <div class="ring-phase" id="ringPhase">—</div>
-      <div class="ring-clock" id="ringClock">—</div>
+    <div class="side-bottom">
+      <button type="button" class="side-link" data-open-ask data-icon="sparkle">Frag Claude</button>
+      <button type="button" class="side-link" data-open-settings data-icon="gear">Einstellungen</button>
     </div>
-  </div>
-  <div class="day-info">
-    <div class="day-status" id="dayStatus">—</div>
-    <div class="day-remaining" id="dayRemaining">—</div>
-    <div class="day-hours" id="dayHours">8:00 AM – 12:00 AM</div>
-  </div>
-</div>
+  </aside>
 
-<!-- ============ Component 4 — Body Panel ============ -->
-<div class="section" id="bodySection">
-  <div class="body-head">
-    <div class="section-title">Body</div>
-    <div class="body-controls">
-      <span class="body-updated" id="bodyUpdated"></span>
-      <button type="button" class="icon-btn" id="bodyRefreshBtn" title="Refresh" aria-label="Refresh body data"><span class="spin-glyph">↻</span></button>
-      <button type="button" class="pill-btn" id="bodySyncBtn" title="Open Intervals.icu to pull fresh Zepp data"><span>Sync</span></button>
-      <button type="button" class="icon-btn" id="bodySettingsBtn" title="Settings" aria-label="Body settings">⚙</button>
-    </div>
-  </div>
-  <p class="body-error" id="bodyError" hidden></p>
-  <p class="body-hint" id="bodyHint" hidden>Sleep from Zepp missing? Tap Sync — Intervals.icu pulls fresh Zepp data when it's opened.</p>
-
-  <div class="card onboard-card" id="bodyOnboard" hidden>
-    <h3 class="onboard-title">Connect your Amazfit</h3>
-    <ol class="onboard-steps">
-      <li>1. Zepp app → Profile → 3rd-party account linking → Intervals.icu (tick wellness import).</li>
-      <li>2. intervals.icu → Settings → Developer Settings → create API key.</li>
-      <li>3. Tap the button below and paste the key.</li>
-    </ol>
-    <button type="button" class="btn-primary" id="bodyOnboardBtn">Add API key</button>
-  </div>
-
-  <div id="bodyContent" hidden>
-    <div class="card body-message" id="bodyNoData" hidden>No Zepp data yet. Check that the Amazfit box in Intervals.icu settings has wellness import ticked, then tap Sync.</div>
-
-    <div class="body-grid">
-      <div class="card body-tile" id="tileSleep">
-        <div class="tile-label"><span class="tile-dot"></span><span>Sleep</span></div>
-        <div class="tile-value"><span class="tile-num">—</span><span class="tile-unit"></span></div>
-        <div class="tile-sub"></div>
-        <div class="tile-foot"></div>
-      </div>
-      <div class="card body-tile" id="tileHrv">
-        <div class="tile-label"><span class="tile-dot"></span><span>HRV</span></div>
-        <div class="tile-value"><span class="tile-num">—</span><span class="tile-unit"></span></div>
-        <div class="tile-sub"></div>
-        <div class="tile-foot"></div>
-      </div>
-      <div class="card body-tile" id="tileRhr">
-        <div class="tile-label"><span class="tile-dot"></span><span>Resting HR</span></div>
-        <div class="tile-value"><span class="tile-num">—</span><span class="tile-unit"></span></div>
-        <div class="tile-sub"></div>
-        <div class="tile-foot"></div>
-      </div>
-      <div class="card body-tile" id="tileSteps">
-        <div class="tile-label"><span class="tile-dot"></span><span>Steps</span></div>
-        <div class="tile-value"><span class="tile-num">—</span><span class="tile-unit"></span></div>
-        <div class="tile-sub"></div>
-        <div class="tile-foot"></div>
-      </div>
-    </div>
-
-    <div class="card training-card" id="trainingCard">
-      <div class="train-stats">
-        <div><div class="mini-label">Fitness</div><div class="train-num" id="trFitness">—</div></div>
-        <div><div class="mini-label">Fatigue</div><div class="train-num" id="trFatigue">—</div></div>
-        <div><div class="mini-label">Form</div><div class="train-num" id="trForm">—</div></div>
-        <div><div class="mini-label">Today's load</div><div class="train-num" id="trLoad">0</div></div>
-      </div>
-      <div class="train-cols">
-        <div>
-          <div class="mini-head"><span class="mini-label">Sleep · 7 days</span><span class="mini-caption" id="sleepCaption"></span></div>
-          <div class="sleep-strip" id="sleepStrip"></div>
-        </div>
-        <div>
-          <div class="mini-head"><span class="mini-label">Recent workouts</span></div>
-          <ul class="workouts" id="workoutList"></ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ Component 5 — To Do List ============ -->
-<div class="section">
-  <div class="section-title">To Do List</div>
-
-  <!-- TODAY -->
-  <div class="card gm-card" id="gmTodayCard">
-    <div class="gm-head">
+  <div class="main">
+    <header class="topbar">
       <div>
-        <div class="gm-eyebrow" id="todayLabel">Today</div>
-        <div class="gm-progress-row">
-          <span class="gm-progress-num" id="gmProgressNum">0</span>
-          <span class="gm-progress-total" id="gmProgressTotal">/ 0</span>
-          <span class="gm-progress-label" id="gmProgressLabel">no goals yet</span>
+        <div class="greet" id="greet">&nbsp;</div>
+        <h1 class="dash-title" id="pageTitle">Mein Dashboard</h1>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="icon-btn mobile-only" data-open-ask aria-label="Frag Claude" title="Frag Claude" data-icon="sparkle"></button>
+        <button type="button" class="icon-btn mobile-only" data-open-settings aria-label="Einstellungen" title="Einstellungen" data-icon="gear"></button>
+      </div>
+    </header>
+
+    <div class="demo-banner" id="demoBanner" hidden>Demo-Modus · Beispieldaten, getrennt von deinen echten Daten · <a href="./">Zur echten Ansicht</a></div>
+
+    <!-- ============ HEUTE ============ -->
+    <section class="view" id="view-heute" aria-label="Heute">
+      <div class="ticker-row">
+        <div class="goal-ticker" id="goalTicker" aria-live="polite" aria-atomic="true" title="Zu den Zielen">
+          <div class="goal-ticker-led"><span class="goal-ticker-led-dot"></span></div>
+          <div class="goal-ticker-label">ZIELE</div>
+          <div class="goal-ticker-stage" id="goalTickerStage">
+            <div class="goal-ticker-row"><span class="goal-ticker-status">—</span><span class="goal-ticker-text">Lädt…</span></div>
+          </div>
+          <div class="goal-ticker-meta" id="goalTickerMeta">0/0</div>
         </div>
       </div>
-      <div class="gm-streak" id="gmStreak" title="Consecutive days with every goal done">
-        <span class="gm-streak-bolt" aria-hidden="true">⚡</span>
-        <span class="gm-streak-num" id="gmStreakNum">0</span>
-        <span class="gm-streak-label">day streak</span>
-      </div>
-    </div>
-    <div class="gm-bar" id="gmBar"></div>
-    <ul id="goalList" class="goal-list gm-list"></ul>
-    <div id="emptyState" class="empty-state">No goals for today yet — add one below.</div>
-    <button type="button" class="gm-push-btn" id="gmPushBtn" hidden>→ Push remaining to tomorrow</button>
-    <div class="goal-input-wrap gm-input-wrap">
-      <input type="text" id="goalInput" class="text-input" placeholder="Add a goal for today…" autocomplete="off" enterkeyhint="done" maxlength="200">
-      <button type="button" class="btn-primary" id="goalAddBtn">+ Add</button>
-      <button type="button" class="btn-secondary" id="goalPolishBtn">✨ Polish</button>
-    </div>
-    <div class="gm-status" id="polishStatus" aria-live="polite"></div>
-  </div>
 
-  <!-- PLAN TOMORROW -->
-  <div class="card gm-card gm-card-tomorrow" id="gmTomorrowCard">
-    <div class="gm-head">
-      <div>
-        <div class="gm-eyebrow" id="tomorrowLabel">Plan tomorrow</div>
-        <div class="gm-sub">Write tonight, locked until 6 AM.</div>
-        <div class="gm-progress-row"></div>
+      <div class="today-grid">
+        <div class="today-col">
+          <div class="card day-card">
+            <div class="day-ring-wrap">
+              <div class="day-ring" id="dayRing" role="img" aria-label="Tagesfortschritt">
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                  <defs>
+                    <filter id="ringGlow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="blur"/>
+                      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                  </defs>
+                  <circle class="ring-track" cx="60" cy="60" r="52"/>
+                  <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52" transform="rotate(-90 60 60)" filter="url(#ringGlow)"/>
+                </svg>
+                <div class="ring-center">
+                  <div class="ring-pct" id="ringPct">—</div>
+                  <div class="ring-phase" id="ringPhase">—</div>
+                  <div class="ring-clock" id="ringClock">—</div>
+                </div>
+              </div>
+              <div class="day-info">
+                <div class="day-status" id="dayStatus">—</div>
+                <div class="day-remaining" id="dayRemaining">—</div>
+                <div class="day-hours" id="dayHours">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card index-card" id="indexCard" role="button" tabindex="0" aria-label="Körper-Index — Verlauf öffnen">
+            <div class="card-title"><span>Körper-Index</span><span class="badge" id="indexBadge" hidden>Basis vorläufig</span></div>
+            <div class="index-top">
+              <div>
+                <div class="index-num is-empty" id="indexNum">—</div>
+                <div class="index-delta" id="indexDelta"></div>
+              </div>
+              <div class="index-spark" id="indexSpark"></div>
+            </div>
+            <div class="index-parts" id="indexParts"></div>
+            <div class="index-sub" id="indexSub"></div>
+          </div>
+
+          <div class="card" id="miniGoalsCard">
+            <div class="card-title"><span>Ziele heute</span><span class="aside" id="miniGoalsStreak"></span></div>
+            <div class="goals-mini-top">
+              <div class="goals-mini-num" id="miniGoalsNum">0<span>/ 0</span></div>
+              <button type="button" class="link-btn" id="miniGoalsMore">Alle Ziele →</button>
+            </div>
+            <ul class="goals-mini-list" id="miniGoalsList"></ul>
+            <div class="empty-state" id="miniGoalsEmpty">Noch keine Ziele für heute.</div>
+            <div class="goal-input-wrap" style="margin-top:6px">
+              <input type="text" id="miniGoalInput" class="text-input" placeholder="Schnell ein Ziel hinzufügen…" autocomplete="off" enterkeyhint="done" maxlength="200">
+              <button type="button" class="btn-primary btn-small" id="miniGoalAddBtn">+ Hinzufügen</button>
+            </div>
+            <div class="gm-status" id="miniGoalStatus" aria-live="polite"></div>
+          </div>
+
+          <div class="card" id="checkinCard">
+            <div class="card-title"><span>Wie geht's dir?</span><span class="aside" id="checkinDate"></span></div>
+            <div class="checkin-row"><span class="checkin-label">Stimmung</span><div class="scale" id="scale-mood"></div></div>
+            <div class="checkin-row"><span class="checkin-label">Energie</span><div class="scale" id="scale-energy"></div>
+              <div class="scale-caption"><span>leer</span><span>voller Akku</span></div></div>
+            <div class="checkin-row"><span class="checkin-label">Stress</span><div class="scale" id="scale-stress"></div>
+              <div class="scale-caption"><span>entspannt</span><span>sehr gestresst</span></div></div>
+            <div class="checkin-note"><input type="text" class="text-input" id="checkinNote" placeholder="Notiz zum Tag (optional)…" maxlength="500" autocomplete="off"></div>
+            <div class="checkin-foot">
+              <span class="saved-note" id="checkinSaved" aria-live="polite"></span>
+              <button type="button" class="btn-secondary btn-small" id="measureOpenBtn">⊕ Gewicht eintragen</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="today-col">
+          <div id="bodySection">
+            <div class="body-head">
+              <div class="section-title">Körper</div>
+              <div class="body-controls">
+                <span class="body-updated" id="bodyUpdated"></span>
+                <button type="button" class="icon-btn plain" id="bodyRefreshBtn" title="Aktualisieren" aria-label="Körperdaten aktualisieren" data-icon="refresh"></button>
+                <button type="button" class="pill-btn" id="bodySyncBtn" title="Intervals.icu öffnen, damit es frische Zepp-Daten holt"><span>Sync</span></button>
+              </div>
+            </div>
+            <p class="body-error" id="bodyError" hidden></p>
+            <p class="body-hint" id="bodyHint" hidden>Schlaf von Zepp fehlt? Tippe auf Sync — Intervals.icu holt frische Zepp-Daten, sobald es geöffnet wird.</p>
+
+            <div class="card onboard-card" id="bodyOnboard" hidden>
+              <h3 class="onboard-title">Verbinde deine Amazfit</h3>
+              <ol class="onboard-steps">
+                <li>1. Zepp-App → Profil → Drittanbieter-Konten → Intervals.icu (Wellness-Import anhaken).</li>
+                <li>2. intervals.icu → Einstellungen → Entwicklereinstellungen → API-Schlüssel erstellen.</li>
+                <li>3. Tippe unten und füge den Schlüssel ein.</li>
+              </ol>
+              <button type="button" class="btn-primary" id="bodyOnboardBtn">API-Schlüssel hinzufügen</button>
+              <p class="sheet-note" style="margin-top:14px">Nur mal schauen? <a href="?demo=1">Demo mit Beispieldaten öffnen</a></p>
+            </div>
+
+            <div id="bodyContent" hidden>
+              <div class="card body-message" id="bodyNoData" hidden>Noch keine Zepp-Daten. Prüf in den Intervals.icu-Einstellungen, ob bei Amazfit/Zepp der Wellness-Import angehakt ist, und tippe dann auf Sync.</div>
+              <div class="body-grid" id="bodyGrid"></div>
+            </div>
+          </div>
+
+          <div class="card" id="trainingCard">
+            <div class="card-title"><span>Training &amp; Schlaf</span></div>
+            <div class="train-stats">
+              <div><div class="mini-label">Fitness</div><div class="train-num" id="trFitness">—</div></div>
+              <div><div class="mini-label">Ermüdung</div><div class="train-num" id="trFatigue">—</div></div>
+              <div><div class="mini-label">Form</div><div class="train-num" id="trForm">—</div></div>
+              <div><div class="mini-label">Last heute</div><div class="train-num" id="trLoad">0</div></div>
+            </div>
+            <div class="train-cols">
+              <div>
+                <div class="mini-head"><span class="mini-label">Schlaf · 7 Tage</span><span class="mini-caption" id="sleepCaption"></span></div>
+                <div class="sleep-strip" id="sleepStrip"></div>
+              </div>
+              <div>
+                <div class="mini-head"><span class="mini-label">Letzte Workouts</span></div>
+                <ul class="workouts" id="workoutList"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="gm-count" id="gmTomorrowCount">0 planned</div>
-    </div>
-    <ul id="tomorrowList" class="goal-list gm-list"></ul>
-    <div id="tomorrowEmpty" class="empty-state">Nothing planned for tomorrow yet</div>
-    <div class="goal-input-wrap gm-input-wrap">
-      <input type="text" id="tomorrowInput" class="text-input" placeholder="Plan a goal for tomorrow…" autocomplete="off" enterkeyhint="done" maxlength="200">
-      <button type="button" class="btn-primary" id="tomorrowAddBtn">+ Add</button>
-      <button type="button" class="btn-secondary" id="tomorrowPolishBtn">✨ Polish</button>
-    </div>
-    <div class="gm-status" id="tomorrowStatus" aria-live="polite"></div>
+    </section>
+
+    <!-- ============ VERLAUF ============ -->
+    <section class="view" id="view-verlauf" aria-label="Verlauf" hidden>
+      <div class="chips" id="historyChips" role="group" aria-label="Wert auswählen"></div>
+      <div class="card">
+        <div class="history-head">
+          <div>
+            <div class="readout-label" id="readoutLabel">—</div>
+            <div class="readout-value" id="readoutValue">—</div>
+            <div class="readout-date" id="readoutDate">&nbsp;</div>
+          </div>
+          <div class="segmented" id="historyRanges" role="group" aria-label="Zeitraum"></div>
+        </div>
+        <div id="historyChart"></div>
+        <div class="legend" id="historyLegend"></div>
+      </div>
+      <div class="stats-grid" id="historyStats"></div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="card-title"><span>Wochenrückblick</span><span class="aside">Durchschnitt je Kalenderwoche</span></div>
+        <div class="table-wrap">
+          <table class="data-table"><thead id="weeklyHead"></thead><tbody id="weeklyBody"></tbody></table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="card-title"><span>Hinter der Grafik</span><span class="aside" id="dataCount"></span></div>
+        <div class="table-wrap">
+          <table class="data-table"><thead id="dataHead"></thead><tbody id="dataBody"></tbody></table>
+        </div>
+        <div class="more-row"><button type="button" class="text-btn" id="dataMore" hidden>Mehr anzeigen</button></div>
+        <p class="field-hint" id="historyNote"></p>
+      </div>
+    </section>
+
+    <!-- ============ ZIELE ============ -->
+    <section class="view" id="view-ziele" aria-label="Ziele" hidden>
+      <div class="goals-grid">
+        <div>
+          <div class="card gm-card" id="gmTodayCard">
+            <div class="gm-head">
+              <div>
+                <div class="gm-eyebrow" id="todayLabel">Heute</div>
+                <div class="gm-progress-row">
+                  <span class="gm-progress-num" id="gmProgressNum">0</span>
+                  <span class="gm-progress-total" id="gmProgressTotal">/ 0</span>
+                  <span class="gm-progress-label" id="gmProgressLabel">noch keine Ziele</span>
+                </div>
+              </div>
+              <div class="gm-streak" id="gmStreak" title="Tage in Folge, an denen alle Ziele erledigt waren">
+                <span class="gm-streak-bolt" aria-hidden="true">⚡</span>
+                <span class="gm-streak-num" id="gmStreakNum">0</span>
+                <span class="gm-streak-label" id="gmStreakLabel">Tage Serie</span>
+              </div>
+            </div>
+            <div class="gm-bar" id="gmBar"></div>
+            <ul id="goalList" class="goal-list"></ul>
+            <div id="emptyState" class="empty-state">Noch keine Ziele für heute — füg unten eins hinzu.</div>
+            <button type="button" class="gm-push-btn" id="gmPushBtn" hidden>→ Offene auf morgen verschieben</button>
+            <div class="goal-input-wrap">
+              <input type="text" id="goalInput" class="text-input" placeholder="Ziel für heute hinzufügen…" autocomplete="off" enterkeyhint="done" maxlength="200">
+              <button type="button" class="btn-primary" id="goalAddBtn">+ Hinzufügen</button>
+              <button type="button" class="btn-secondary" id="goalPolishBtn" title="Mit Claude sprachlich aufräumen">✨ Polieren</button>
+            </div>
+            <div class="gm-status" id="polishStatus" aria-live="polite"></div>
+          </div>
+
+          <div class="card gm-card gm-card-tomorrow" id="gmTomorrowCard">
+            <div class="gm-head">
+              <div>
+                <div class="gm-eyebrow" id="tomorrowLabel">Morgen planen</div>
+                <div class="gm-sub">Heute Abend schreiben, ab 6 Uhr aktiv.</div>
+              </div>
+              <div class="gm-count" id="gmTomorrowCount">0 geplant</div>
+            </div>
+            <ul id="tomorrowList" class="goal-list"></ul>
+            <div id="tomorrowEmpty" class="empty-state">Für morgen ist noch nichts geplant</div>
+            <div class="goal-input-wrap">
+              <input type="text" id="tomorrowInput" class="text-input" placeholder="Ziel für morgen planen…" autocomplete="off" enterkeyhint="done" maxlength="200">
+              <button type="button" class="btn-primary" id="tomorrowAddBtn">+ Hinzufügen</button>
+              <button type="button" class="btn-secondary" id="tomorrowPolishBtn" title="Mit Claude sprachlich aufräumen">✨ Polieren</button>
+            </div>
+            <div class="gm-status" id="tomorrowStatus" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>Historie</span><span class="aside">letzte 30 Tage</span></div>
+          <div class="stat-row">
+            <div><div class="mini-label">Erledigt</div><div class="stat-num" id="ghRate">—</div></div>
+            <div><div class="mini-label">Perfekte Tage</div><div class="stat-num" id="ghPerfect">—</div></div>
+            <div><div class="mini-label">Serie</div><div class="stat-num" id="ghStreak">0</div></div>
+            <div><div class="mini-label">Rekord</div><div class="stat-num" id="ghBest">0</div></div>
+          </div>
+          <div class="heatmap-wrap"><div class="heatmap" id="goalHeatmap" aria-label="Ziele pro Tag"></div></div>
+          <div class="hm-legend">
+            <span>weniger</span>
+            <span class="hm-cell" style="background:rgba(255,107,107,0.30)"></span>
+            <span class="hm-cell" style="background:rgba(107,227,164,0.30)"></span>
+            <span class="hm-cell" style="background:rgba(107,227,164,0.55)"></span>
+            <span class="hm-cell" style="background:#6BE3A4"></span>
+            <span>alles erledigt</span>
+          </div>
+          <div class="hm-detail" id="goalDayDetail" hidden></div>
+          <p class="field-hint">Tippe auf einen Tag, um zu sehen, was du dir vorgenommen und geschafft hast.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EXPERIMENTE ============ -->
+    <section class="view" id="view-experimente" aria-label="Experimente" hidden>
+      <div class="view-head">
+        <p class="lead" style="margin:0">Probier eine Gewohnheit aus und sieh, ob sie dich wirklich verändert. Das Dashboard vergleicht die 4 Wochen davor mit der Zeit währenddessen — und sagt ehrlich „kein klarer Effekt“, wenn die Daten es nicht hergeben.</p>
+        <button type="button" class="btn-primary" id="expNewBtn">+ Neues Experiment</button>
+      </div>
+      <div class="card" id="expEmpty" hidden>
+        <div class="card-title"><span>Ideen zum Starten</span></div>
+        <div class="btn-row">
+          <button type="button" class="chip-btn" data-exp-idea="Kein Koffein nach 14 Uhr" data-exp-metric="sleep">☕ Kein Koffein nach 14 Uhr → Schlaf</button>
+          <button type="button" class="chip-btn" data-exp-idea="Handy ab 22 Uhr weg" data-exp-metric="sleepScore">📵 Handy ab 22 Uhr weg → Schlafscore</button>
+          <button type="button" class="chip-btn" data-exp-idea="Kein Alkohol" data-exp-metric="hrv">🚫 Kein Alkohol → HRV</button>
+          <button type="button" class="chip-btn" data-exp-idea="Täglich 20 Min spazieren" data-exp-metric="rhr">🚶 20 Min Spazieren → Ruhepuls</button>
+          <button type="button" class="chip-btn" data-exp-idea="Morgens 10 Min meditieren" data-exp-metric="stress">🧘 Meditieren → Stress</button>
+        </div>
+        <div style="margin-top:14px"><button type="button" class="btn-secondary btn-small" id="expEmptyBtn">Eigenes Experiment anlegen</button></div>
+      </div>
+      <div class="exp-list" id="expList"></div>
+    </section>
+
+    <!-- ============ FOTOS ============ -->
+    <section class="view" id="view-fotos" aria-label="Fortschrittsfotos" hidden>
+      <div class="view-head">
+        <div>
+          <p class="lead" style="margin:0 0 4px">Deine Fortschrittsfotos — privat, nur auf diesem Gerät gespeichert.</p>
+          <span class="muted small mono" id="photoCount">Optional</span>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn-secondary btn-small" id="photoCompareBtn" hidden>Vergleichen</button>
+          <button type="button" class="btn-primary btn-small" id="photoAddBtn">+ Foto</button>
+        </div>
+      </div>
+      <div class="photo-grid" id="photoGrid"></div>
+      <div class="card photo-empty" id="photoEmpty">
+        <p style="margin:0 0 14px">Ein visuelles Tagebuch, wann immer du willst. Fotos werden nicht hochgeladen und erzeugen keine Werte.</p>
+        <button type="button" class="btn-primary btn-small" id="photoEmptyBtn">Erstes Foto hinzufügen</button>
+      </div>
+      <details class="hidden-list" id="hiddenPhotos" hidden>
+        <summary id="hiddenCount">Ausgeblendete Fotos</summary>
+        <p class="sheet-note">Aus der Galerie ausgeblendet. Wiederherstellen oder endgültig von diesem Gerät löschen.</p>
+        <div id="hiddenList"></div>
+      </details>
+      <p class="field-hint" style="margin-top:16px">Tipp: Fotos liegen nur in diesem Browser. Wenn du Website-Daten löschst, sind sie weg — wichtige Fotos zusätzlich in deiner Galerie behalten.</p>
+    </section>
   </div>
 </div>
 
-<!-- ============ Settings sheet ============ -->
-<div class="sheet-backdrop" id="settingsBackdrop"></div>
+<!-- ============ Tab bar (mobile) ============ -->
+<nav class="tabbar" aria-label="Navigation">
+  <button type="button" class="tab-btn" data-nav="heute" data-icon="home">Heute</button>
+  <button type="button" class="tab-btn" data-nav="verlauf" data-icon="chart">Verlauf</button>
+  <button type="button" class="tab-btn" data-nav="ziele" data-icon="check">Ziele</button>
+  <button type="button" class="tab-btn" data-nav="experimente" data-icon="flask">Experimente</button>
+  <button type="button" class="tab-btn" data-nav="fotos" data-icon="image">Fotos</button>
+</nav>
+
+<!-- ============ Sheets ============ -->
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
+
 <div class="sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" aria-hidden="true">
   <div class="sheet-grabber"></div>
-  <h2 id="settingsTitle">Settings</h2>
+  <div class="sheet-head"><h2 id="settingsTitle">Einstellungen</h2></div>
+  <p class="sheet-note" id="demoNote" hidden>Du bist im Demo-Modus. Einstellungen hier gelten nur für die Demo — deine echten Schlüssel trägst du auf der normalen Seite ein.</p>
+
+  <h3>Verbindungen</h3>
   <div class="field">
-    <label class="field-label" for="setApiKey">Intervals.icu API key</label>
+    <label class="field-label" for="setApiKey">Intervals.icu API-Schlüssel</label>
     <div class="field-row">
       <input type="password" id="setApiKey" class="text-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <button type="button" class="field-toggle" id="toggleApiKey" aria-controls="setApiKey">Show</button>
+      <button type="button" class="field-toggle" id="toggleApiKey" aria-controls="setApiKey">Zeigen</button>
     </div>
   </div>
   <div class="field">
-    <label class="field-label" for="setAthleteId">Athlete ID</label>
+    <label class="field-label" for="setAthleteId">Athleten-ID</label>
     <input type="text" id="setAthleteId" class="text-input" placeholder="0" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="field-hint">0 = der Besitzer des Schlüssels (du). Alternativ deine ID, z. B. i123456.</div>
   </div>
   <div class="field">
-    <label class="field-label" for="setStepGoal">Daily step goal</label>
-    <input type="number" id="setStepGoal" class="text-input" placeholder="10000" min="1" step="500" inputmode="numeric">
-  </div>
-  <div class="field">
-    <label class="field-label" for="setAnthropicKey">Anthropic API key (optional, for ✨ Polish)</label>
+    <label class="field-label" for="setAnthropicKey">Anthropic API-Schlüssel (optional, für ✨ Polieren und Frag Claude)</label>
     <input type="password" id="setAnthropicKey" class="text-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
   </div>
-  <p class="sheet-note">Keys are stored only in this browser.</p>
+  <p class="sheet-note">Schlüssel werden nur in diesem Browser gespeichert und nie in ein Backup geschrieben.</p>
+
+  <h3>Ziele &amp; Tag</h3>
+  <div class="field-grid">
+    <div class="field">
+      <label class="field-label" for="setStepGoal">Schrittziel</label>
+      <input type="number" id="setStepGoal" class="text-input" placeholder="10000" min="1" step="500" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label class="field-label" for="setWeightGoal">Zielgewicht (kg)</label>
+      <input type="text" id="setWeightGoal" class="text-input" placeholder="optional" inputmode="decimal" autocomplete="off">
+    </div>
+    <div class="field">
+      <label class="field-label" for="setWake">Aufstehen</label>
+      <select id="setWake" class="select-input"></select>
+    </div>
+    <div class="field">
+      <label class="field-label" for="setSleep">Schlafenszeit</label>
+      <select id="setSleep" class="select-input"></select>
+    </div>
+  </div>
+
+  <h3>Körper-Index</h3>
+  <p class="sheet-note">100 ist deine eigene Basis (deine ersten 30 Tage mit Daten). 10 Punkte = eine normale Schwankung bei dir, nicht 10 %. Du legst fest, was für dich „besser“ heißt.</p>
+  <div id="dirList"></div>
+  <button type="button" class="text-btn" id="resetBaselines">Basis neu berechnen</button>
+
+  <h3>Daten</h3>
+  <p class="sheet-note">Ziele, Check-ins und Experimente liegen nur in diesem Browser. Mach ab und zu ein Backup. Deine Amazfit-Werte liegen sicher bei Intervals.icu.</p>
+  <div class="btn-row" style="margin-bottom:16px">
+    <button type="button" class="btn-secondary btn-small" id="exportBtn">Backup herunterladen</button>
+    <label class="btn-secondary btn-small" style="cursor:pointer">Backup importieren<input type="file" id="importFile" accept="application/json,.json" hidden></label>
+  </div>
+
   <div class="sheet-result" id="settingsResult" aria-live="polite"></div>
   <div class="sheet-actions">
-    <button type="button" class="btn-secondary" id="settingsCancel">Cancel</button>
-    <button type="button" class="btn-primary" id="settingsSave">Save &amp; test</button>
+    <button type="button" class="btn-secondary" id="settingsCancel">Abbrechen</button>
+    <button type="button" class="btn-primary" id="settingsSave">Speichern &amp; testen</button>
   </div>
 </div>
 
-<script>
-(function () {
-  'use strict';
-
-  /* =====================================================================
-     Constants
-     ===================================================================== */
-  var WAKE_HOUR = 8;
-  var SLEEP_HOUR = 24;
-
-  var SETTINGS_KEY = 'body_settings_v1';
-  var CACHE_KEY = 'body_cache_v1';
-  var STREAK_KEY = 'goal_streak_v1';
-  var GOALS_PREFIX = 'goals:';
-
-  var API_BASE = 'https://intervals.icu/api/v1';
-  var FETCH_TIMEOUT_MS = 15000;
-  var MIN_FETCH_GAP_MS = 30000;
-  var AUTO_REFRESH_MS = 15 * 60 * 1000;
-  var STALE_ON_VISIBLE_MS = 2 * 60 * 1000;
-
-  var COLLAPSE_LIMIT = 5;
-  var DEMO = /[?&]demo=1(?:&|$)/.test(window.location.search);
-
-  var WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  var WD_INITIAL = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  var MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-  var $ = function (id) { return document.getElementById(id); };
-
-  function el(tag, cls, text) {
-    var n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (text != null) n.textContent = text;
-    return n;
-  }
-
-  /* =====================================================================
-     Storage helpers
-     ===================================================================== */
-  function isGoalsKey(key) { return typeof key === 'string' && key.indexOf(GOALS_PREFIX) === 0; }
-
-  function notifyGoals(key) {
-    if (isGoalsKey(key)) {
-      try { window.dispatchEvent(new CustomEvent('goals-changed')); } catch (e) {}
-    }
-  }
-
-  function storeGet(key) {
-    try {
-      var raw = localStorage.getItem(key);
-      return raw == null ? null : JSON.parse(raw);
-    } catch (e) { return null; }
-  }
-
-  function storeSet(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
-    notifyGoals(key);
-  }
-
-  function storeDelete(key) {
-    try { localStorage.removeItem(key); } catch (e) {}
-    notifyGoals(key);
-  }
-
-  function storeListKeys(prefix) {
-    var out = [];
-    try {
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i);
-        if (k && k.indexOf(prefix) === 0) out.push(k);
-      }
-    } catch (e) {}
-    return out;
-  }
-
-  /* =====================================================================
-     Date helpers — always local date parts, never toISOString()
-     ===================================================================== */
-  function pad2(n) { return (n < 10 ? '0' : '') + n; }
-  function ymd(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
-  function parseYmd(s) {
-    var p = String(s).slice(0, 10).split('-');
-    return new Date(+p[0], +p[1] - 1, +p[2]);
-  }
-  function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
-
-  function getActiveDateString() {
-    var now = new Date();
-    return now.getHours() < 6 ? ymd(addDays(now, -1)) : ymd(now);
-  }
-  function getTomorrowDateString() {
-    var now = new Date();
-    return now.getHours() < 6 ? ymd(now) : ymd(addDays(now, 1));
-  }
-  function formatDate(s) {
-    var d = parseYmd(s);
-    return WD[d.getDay()] + ', ' + MO[d.getMonth()] + ' ' + d.getDate();
-  }
-  function fmtClock(d) {
-    var h = d.getHours();
-    var ap = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return h + ':' + pad2(d.getMinutes()) + ' ' + ap;
-  }
-  function fmtHM(hours) {
-    var total = Math.max(0, Math.floor(hours * 60));
-    return Math.floor(total / 60) + 'h ' + pad2(total % 60) + 'm';
-  }
-
-  function todayKey() { return GOALS_PREFIX + getActiveDateString(); }
-  function tomorrowKey() { return GOALS_PREFIX + getTomorrowDateString(); }
-
-  /* =====================================================================
-     Goals data
-     ===================================================================== */
-  function getGoals(key) {
-    var v = storeGet(key);
-    if (!Array.isArray(v)) return [];
-    var out = [];
-    for (var i = 0; i < v.length; i++) {
-      var g = v[i];
-      if (g && typeof g.text === 'string' && g.text.trim()) {
-        var item = { text: g.text, done: !!g.done };
-        if (g.doneAt) item.doneAt = g.doneAt;
-        if (g.queued) item.queued = true;
-        out.push(item);
-      }
-    }
-    return out;
-  }
-  function saveGoals(key, goals) { storeSet(key, goals); }
-
-  /* Streak — walk processed-but-past days in order */
-  function runStreakCheck() {
-    var active = getActiveDateString();
-    var st = storeGet(STREAK_KEY) || {};
-    var count = typeof st.count === 'number' && st.count >= 0 ? st.count : 0;
-    var last = typeof st.lastProcessedDate === 'string' ? st.lastProcessedDate : null;
-    var dates = storeListKeys(GOALS_PREFIX)
-      .map(function (k) { return k.slice(GOALS_PREFIX.length); })
-      .filter(function (d) { return /^\d{4}-\d{2}-\d{2}$/.test(d) && d < active && (!last || d > last); })
-      .sort();
-    if (!dates.length) return;
-    dates.forEach(function (d) {
-      var goals = getGoals(GOALS_PREFIX + d);
-      if (goals.length) {
-        if (goals.every(function (g) { return g.done; })) count += 1;
-        else count = 0;
-      }
-      last = d;
-    });
-    storeSet(STREAK_KEY, { count: count, lastProcessedDate: last });
-  }
-
-  /* Rollover — carry undone goals from older days into today */
-  function runRollover() {
-    var active = getActiveDateString();
-    var oldKeys = storeListKeys(GOALS_PREFIX).filter(function (k) {
-      var d = k.slice(GOALS_PREFIX.length);
-      return d < active;
-    }).sort();
-    if (!oldKeys.length) return;
-    var tk = GOALS_PREFIX + active;
-    var today = getGoals(tk);
-    var seen = {};
-    today.forEach(function (g) { seen[g.text] = true; });
-    var changed = false;
-    oldKeys.forEach(function (k) {
-      getGoals(k).forEach(function (g) {
-        if (!g.done && !seen[g.text]) {
-          var item = { text: g.text, done: false };
-          if (g.queued) item.queued = true;
-          today.push(item);
-          seen[g.text] = true;
-          changed = true;
-        }
-      });
-    });
-    if (changed) saveGoals(tk, today);
-    oldKeys.forEach(function (k) { storeDelete(k); });
-  }
-
-  /* =====================================================================
-     To Do List — rendering
-     ===================================================================== */
-  var expanded = {};
-  var justChecked = null;
-  var dragState = null;
-  var touchDrag = null;
-
-  function renderTodayHeader() {
-    var goals = getGoals(todayKey());
-    var total = goals.length;
-    var done = goals.filter(function (g) { return g.done; }).length;
-    $('todayLabel').textContent = 'Today — ' + formatDate(getActiveDateString());
-    $('gmProgressNum').textContent = done;
-    $('gmProgressTotal').textContent = '/ ' + total;
-    var allDone = total > 0 && done === total;
-    $('gmProgressLabel').textContent = total === 0 ? 'no goals yet' : (allDone ? 'all done — solid day' : 'complete');
-    var bar = $('gmBar');
-    bar.innerHTML = '';
-    goals.forEach(function (g) {
-      bar.appendChild(el('div', 'gm-bar-seg' + (g.done ? ' gm-bar-seg-done' : '')));
-    });
-    $('gmTodayCard').classList.toggle('gm-all-done', allDone);
-    var pending = total - done;
-    var push = $('gmPushBtn');
-    push.hidden = pending === 0;
-    push.textContent = '→ Push ' + pending + ' remaining to tomorrow';
-  }
-
-  function renderStreak() {
-    var st = storeGet(STREAK_KEY) || {};
-    var count = typeof st.count === 'number' && st.count > 0 ? st.count : 0;
-    $('gmStreakNum').textContent = count;
-    $('gmStreak').classList.toggle('gm-streak-active', count > 0);
-  }
-
-  function renderTomorrowCount() {
-    var n = getGoals(tomorrowKey()).length;
-    $('tomorrowLabel').textContent = 'Plan tomorrow — ' + formatDate(getTomorrowDateString());
-    $('gmTomorrowCount').textContent = n + ' planned';
-  }
-
-  function renderListInto(goals, listEl, emptyEl, key, readOnly) {
-    var reload = readOnly ? loadTomorrow : loadToday;
-    listEl.innerHTML = '';
-    emptyEl.style.display = goals.length ? 'none' : '';
-    var showAll = !!expanded[listEl.id] || goals.length <= COLLAPSE_LIMIT;
-    for (var i = 0; i < goals.length; i++) {
-      if (!showAll && i >= COLLAPSE_LIMIT) break;
-      listEl.appendChild(buildGoalRow(goals[i], i, key, readOnly, listEl));
-    }
-    if (goals.length > COLLAPSE_LIMIT) {
-      var more = el('li', 'gm-more', showAll ? 'Show less ▴' : 'Show ' + (goals.length - COLLAPSE_LIMIT) + ' more ▾');
-      more.setAttribute('role', 'button');
-      more.tabIndex = 0;
-      var toggle = function () { expanded[listEl.id] = !showAll; reload(); };
-      more.addEventListener('click', toggle);
-      more.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
-      });
-      listEl.appendChild(more);
-    }
-    justChecked = null;
-    if (readOnly) renderTomorrowCount(); else renderTodayHeader();
-  }
-
-  function loadToday() {
-    var k = todayKey();
-    renderListInto(getGoals(k), $('goalList'), $('emptyState'), k, false);
-  }
-  function loadTomorrow() {
-    var k = tomorrowKey();
-    renderListInto(getGoals(k), $('tomorrowList'), $('tomorrowEmpty'), k, true);
-  }
-
-  function buildGoalRow(goal, idx, key, readOnly, listEl) {
-    var reload = readOnly ? loadTomorrow : loadToday;
-    var cls = 'goal-item';
-    if (goal.done) cls += ' done';
-    if (goal.queued && !readOnly && !goal.done) cls += ' queued';
-    if (justChecked && justChecked.key === key && justChecked.idx === idx) cls += ' just-checked';
-    var li = el('li', cls);
-    li.dataset.idx = String(idx);
-
-    var handle = el('span', 'goal-drag', '⋮⋮');
-    handle.title = 'Drag to reorder';
-    handle.setAttribute('aria-hidden', 'true');
-
-    var check = el('label', 'goal-check');
-    var cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = goal.done;
-    cb.setAttribute('aria-label', 'Mark "' + goal.text + '" as done');
-    if (readOnly) {
-      cb.disabled = true;
-      check.title = 'Activates at 6 AM tomorrow';
-      cb.title = 'Activates at 6 AM tomorrow';
-    }
-    check.appendChild(cb);
-    check.appendChild(el('span', 'goal-check-box'));
-
-    var text = el('span', 'goal-text', goal.text);
-    text.title = 'Click to edit';
-
-    var q = el('button', 'row-btn gm-queue-btn' + (goal.queued && !readOnly ? ' is-active' : ''), '⚡');
-    q.type = 'button';
-    q.title = readOnly ? 'Activates at 6 AM tomorrow' : (goal.queued ? 'Queued for productivity window' : 'Queue for productivity window');
-    q.setAttribute('aria-label', 'Queue for productivity window');
-    q.setAttribute('aria-pressed', goal.queued && !readOnly ? 'true' : 'false');
-    if (readOnly) q.disabled = true;
-
-    var del = el('button', 'row-btn goal-delete', '×');
-    del.type = 'button';
-    del.title = 'Delete';
-    del.setAttribute('aria-label', 'Delete "' + goal.text + '"');
-
-    li.appendChild(handle);
-    li.appendChild(check);
-    li.appendChild(text);
-    li.appendChild(q);
-    li.appendChild(del);
-
-    if (!readOnly) {
-      cb.addEventListener('change', function () {
-        var goals = getGoals(key);
-        if (!goals[idx]) return;
-        goals[idx].done = cb.checked;
-        if (cb.checked) { goals[idx].doneAt = Date.now(); justChecked = { key: key, idx: idx }; }
-        else delete goals[idx].doneAt;
-        saveGoals(key, goals);
-        reload();
-      });
-
-      q.addEventListener('click', function (e) {
-        e.stopPropagation();
-        var goals = getGoals(key);
-        if (!goals[idx]) return;
-        if (goals[idx].queued) delete goals[idx].queued;
-        else goals[idx].queued = true;
-        saveGoals(key, goals);
-        li.classList.toggle('queued', !!goals[idx].queued && !goals[idx].done);
-        q.classList.toggle('is-active', !!goals[idx].queued);
-        li.classList.remove('is-queue-flashing');
-        void li.offsetWidth;
-        li.classList.add('is-queue-flashing');
-        setTimeout(reload, 480);
-      });
-    }
-
-    del.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var goals = getGoals(key);
-      if (!goals[idx]) return;
-      goals.splice(idx, 1);
-      saveGoals(key, goals);
-      reload();
-    });
-
-    makeInlineEdit(text, key, idx, reload);
-    wireDragReorder(li, handle, key, idx, reload, listEl);
-    return li;
-  }
-
-  function placeCaretAtEnd(node) {
-    try {
-      var range = document.createRange();
-      range.selectNodeContents(node);
-      range.collapse(false);
-      var sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    } catch (e) {}
-  }
-
-  function makeInlineEdit(textEl, key, idx, reload) {
-    textEl.addEventListener('click', function () {
-      if (textEl.isContentEditable) return;
-      var original = textEl.textContent;
-      var finished = false;
-      textEl.contentEditable = 'true';
-      textEl.classList.add('editing');
-      textEl.focus();
-      placeCaretAtEnd(textEl);
-
-      function finish(commit) {
-        if (finished) return;
-        finished = true;
-        textEl.removeEventListener('keydown', onKey);
-        textEl.removeEventListener('blur', onBlur);
-        textEl.contentEditable = 'false';
-        textEl.classList.remove('editing');
-        var next = textEl.textContent.replace(/\s+/g, ' ').trim();
-        if (commit && next && next !== original) {
-          var goals = getGoals(key);
-          if (goals[idx]) {
-            goals[idx].text = next.slice(0, 200);
-            saveGoals(key, goals);
-          }
-          reload();
-        } else {
-          textEl.textContent = original;
-        }
-      }
-      function onKey(e) {
-        if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); finish(true); }
-        else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
-      }
-      function onBlur() { finish(true); }
-      textEl.addEventListener('keydown', onKey);
-      textEl.addEventListener('blur', onBlur);
-    });
-  }
-
-  function clearDragIndicators(listEl) {
-    var nodes = listEl.querySelectorAll('.drag-over-top, .drag-over-bottom');
-    for (var i = 0; i < nodes.length; i++) nodes[i].classList.remove('drag-over-top', 'drag-over-bottom');
-  }
-
-  function moveGoal(key, from, to) {
-    if (from === to || from == null || to == null) return false;
-    var goals = getGoals(key);
-    if (from < 0 || from >= goals.length || to < 0 || to >= goals.length) return false;
-    var item = goals.splice(from, 1)[0];
-    goals.splice(to, 0, item);
-    saveGoals(key, goals);
-    return true;
-  }
-
-  function markDropTarget(row, from) {
-    var to = +row.dataset.idx;
-    row.classList.add(from < to ? 'drag-over-bottom' : 'drag-over-top');
-  }
-
-  function wireDragReorder(li, handle, key, idx, reload, listEl) {
-    /* Mouse: HTML5 drag & drop, armed only from the handle */
-    handle.addEventListener('mousedown', function () { li.draggable = true; });
-    handle.addEventListener('mouseup', function () { li.draggable = false; });
-
-    li.addEventListener('dragstart', function (e) {
-      if (!li.draggable) { e.preventDefault(); return; }
-      dragState = { key: key, from: idx };
-      li.classList.add('dragging');
-      try {
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', String(idx));
-      } catch (err) {}
-    });
-    li.addEventListener('dragend', function () {
-      li.draggable = false;
-      li.classList.remove('dragging');
-      clearDragIndicators(listEl);
-      dragState = null;
-    });
-    li.addEventListener('dragover', function (e) {
-      if (!dragState || dragState.key !== key) return;
-      e.preventDefault();
-      try { e.dataTransfer.dropEffect = 'move'; } catch (err) {}
-      clearDragIndicators(listEl);
-      if (dragState.from !== idx) markDropTarget(li, dragState.from);
-    });
-    li.addEventListener('dragleave', function (e) {
-      if (!li.contains(e.relatedTarget)) li.classList.remove('drag-over-top', 'drag-over-bottom');
-    });
-    li.addEventListener('drop', function (e) {
-      if (!dragState || dragState.key !== key) return;
-      e.preventDefault();
-      var from = dragState.from;
-      dragState = null;
-      clearDragIndicators(listEl);
-      if (moveGoal(key, from, idx)) reload();
-    });
-
-    /* Touch: manual reordering via elementFromPoint */
-    handle.addEventListener('touchstart', function (e) {
-      if (e.touches.length !== 1) return;
-      e.preventDefault();
-      touchDrag = { key: key, from: idx, over: null };
-      li.classList.add('dragging');
-    }, { passive: false });
-
-    handle.addEventListener('touchmove', function (e) {
-      if (!touchDrag) return;
-      e.preventDefault();
-      var t = e.touches[0];
-      if (t.clientY < 70) window.scrollBy(0, -10);
-      else if (t.clientY > window.innerHeight - 70) window.scrollBy(0, 10);
-      var target = document.elementFromPoint(t.clientX, t.clientY);
-      var row = target && target.closest ? target.closest('.goal-item') : null;
-      clearDragIndicators(listEl);
-      if (row && row.parentNode === listEl && row !== li) {
-        touchDrag.over = +row.dataset.idx;
-        markDropTarget(row, touchDrag.from);
-      } else if (row === li) {
-        touchDrag.over = null;
-      }
-    }, { passive: false });
-
-    function endTouch(commit) {
-      if (!touchDrag) return;
-      var st = touchDrag;
-      touchDrag = null;
-      li.classList.remove('dragging');
-      clearDragIndicators(listEl);
-      if (commit && st.over != null && moveGoal(key, st.from, st.over)) reload();
-    }
-    handle.addEventListener('touchend', function () { endTouch(true); });
-    handle.addEventListener('touchcancel', function () { endTouch(false); });
-  }
-
-  /* Push remaining → tomorrow */
-  function pushRemaining() {
-    var tk = todayKey();
-    var goals = getGoals(tk);
-    var pending = goals.filter(function (g) { return !g.done; });
-    if (!pending.length) return;
-    var msg = 'Move ' + pending.length + ' unfinished goal' + (pending.length === 1 ? '' : 's') + ' to tomorrow?';
-    if (!window.confirm(msg)) return;
-    var nk = tomorrowKey();
-    var tomorrow = getGoals(nk);
-    var seen = {};
-    tomorrow.forEach(function (g) { seen[g.text] = true; });
-    pending.forEach(function (g) {
-      if (!seen[g.text]) {
-        var item = { text: g.text, done: false };
-        if (g.queued) item.queued = true;
-        tomorrow.push(item);
-        seen[g.text] = true;
-      }
-    });
-    saveGoals(nk, tomorrow);
-    saveGoals(tk, goals.filter(function (g) { return g.done; }));
-    loadToday();
-    loadTomorrow();
-  }
-
-  /* Add + Polish */
-  function makeAddHandlers(input, addBtn, polishBtn, keyFn, statusEl, reload) {
-    var timer = null;
-
-    function flash(msg, isError) {
-      clearTimeout(timer);
-      statusEl.textContent = msg;
-      statusEl.classList.toggle('is-error', !!isError);
-      timer = setTimeout(function () {
-        statusEl.textContent = '';
-        statusEl.classList.remove('is-error');
-      }, 3500);
-    }
-
-    function pushGoal(text) {
-      var k = keyFn();
-      var goals = getGoals(k);
-      goals.push({ text: text.slice(0, 200), done: false });
-      saveGoals(k, goals);
-      input.value = '';
-      reload();
-    }
-
-    addBtn.addEventListener('click', function () {
-      var t = input.value.replace(/\s+/g, ' ').trim();
-      if (!t) { input.focus(); return; }
-      pushGoal(t);
-    });
-
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.isComposing) {
-        e.preventDefault();
-        addBtn.click();
-      }
-    });
-
-    polishBtn.addEventListener('click', function () {
-      var raw = input.value.replace(/\s+/g, ' ').trim();
-      if (!raw) { input.focus(); return; }
-      var apiKey = (getSettings().anthropicKey || '').trim();
-      if (!apiKey) {
-        pushGoal(raw);
-        flash('Polish needs an Anthropic API key (⚙ settings) — added as-typed.', false);
-        return;
-      }
-      polishBtn.disabled = true;
-      addBtn.disabled = true;
-      clearTimeout(timer);
-      statusEl.classList.remove('is-error');
-      statusEl.textContent = 'Polishing…';
-
-      var prompt =
-        'Clean up exactly ONE to-do goal. Fix spelling and grammar, make it concise and action-oriented ' +
-        '(start with a verb when natural), keep the original language and meaning, and do not add new details. ' +
-        'Return ONLY a JSON array containing exactly one string — no preamble, no explanation, no code fences.\n\n' +
-        'Goal: ' + raw;
-
-      fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-beta': 'server-side-fallback-2026-07-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-5-5',
-          max_tokens: 1000,
-          output_config: { effort: 'low' },
-          fallbacks: 'default',
-          messages: [{ role: 'user', content: prompt }]
-        })
-      })
-        .then(function (res) {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.json();
-        })
-        .then(function (data) {
-          if (!data || data.stop_reason === 'refusal') throw new Error('refusal');
-          var txt = (data.content || [])
-            .filter(function (b) { return b && b.type === 'text'; })
-            .map(function (b) { return b.text; })
-            .join('')
-            .trim()
-            .replace(/^```(?:json)?\s*/i, '')
-            .replace(/\s*```$/, '')
-            .trim();
-          var arr = JSON.parse(txt);
-          if (!Array.isArray(arr) || typeof arr[0] !== 'string' || !arr[0].trim()) throw new Error('bad shape');
-          pushGoal(arr[0].replace(/\s+/g, ' ').trim());
-          statusEl.textContent = '';
-        })
-        .catch(function () {
-          pushGoal(raw);
-          flash('Polish failed — added as-typed.', true);
-        })
-        .then(function () {
-          polishBtn.disabled = false;
-          addBtn.disabled = false;
-        });
-    });
-  }
-
-  /* =====================================================================
-     Goal Ticker
-     ===================================================================== */
-  var Ticker = (function () {
-    var stage = $('goalTickerStage');
-    var meta = $('goalTickerMeta');
-    var cycleIdx = 0;
-    var first = true;
-    var timer = null;
-    var pendingSync = false;
-    var lastSig = '';
-
-    function buildItems() {
-      var goals = getGoals(todayKey());
-      var total = goals.length;
-      var done = goals.filter(function (g) { return g.done; }).length;
-      var items;
-      if (total === 0) items = [{ status: 'empty', text: 'No goals set for today — add one to get rolling.' }];
-      else if (done === total) items = [{ status: 'done', text: '✓ All goals done — solid day.' }];
-      else items = goals.filter(function (g) { return !g.done; }).map(function (g) { return { status: 'pending', text: g.text }; });
-      return { items: items, done: done, total: total };
-    }
-
-    function glyph(status) {
-      if (status === 'done') return '✓';
-      if (status === 'pending') return '○';
-      return '·';
-    }
-
-    function makeRow(item) {
-      var row = el('div', 'goal-ticker-row');
-      var st = el('span', 'goal-ticker-status', glyph(item.status));
-      st.setAttribute('data-status', item.status);
-      var text = item.text;
-      if (item.status === 'done' && text.indexOf('✓') === 0) text = text.replace(/^✓\s*/, '');
-      row.appendChild(st);
-      row.appendChild(el('span', 'goal-ticker-text', text));
-      return row;
-    }
-
-    function tick(force) {
-      var data = buildItems();
-      var items = data.items;
-      if (cycleIdx >= items.length) cycleIdx = 0;
-      var item = items[cycleIdx];
-      cycleIdx = (cycleIdx + 1) % items.length;
-      meta.textContent = data.done + '/' + data.total;
-
-      var sig = item.status + '|' + item.text;
-      if (!force && !first && items.length === 1 && sig === lastSig) return;
-      lastSig = sig;
-
-      var row = makeRow(item);
-      var current = stage.querySelectorAll('.goal-ticker-row:not(.is-leaving)');
-      if (first) {
-        for (var i = 0; i < current.length; i++) current[i].remove();
-        first = false;
-      } else {
-        for (var j = 0; j < current.length; j++) {
-          (function (old) {
-            old.classList.remove('is-entering');
-            old.classList.add('is-leaving');
-            setTimeout(function () { if (old.parentNode) old.parentNode.removeChild(old); }, 460);
-          })(current[j]);
-        }
-        row.classList.add('is-entering');
-      }
-      stage.appendChild(row);
-    }
-
-    function restartInterval() {
-      clearInterval(timer);
-      timer = setInterval(function () { tick(false); }, 5000);
-    }
-
-    function start() {
-      tick(true);
-      restartInterval();
-      window.addEventListener('goals-changed', function () {
-        if (pendingSync) return;
-        pendingSync = true;
-        setTimeout(function () {
-          pendingSync = false;
-          cycleIdx = 0;
-          tick(true);
-          restartInterval();
-        }, 0);
-      });
-    }
-
-    return { start: start, tick: tick };
-  })();
-
-  /* =====================================================================
-     Day Ring
-     ===================================================================== */
-  var SUN_STOPS = [
-    [0,    [255, 216, 158]],
-    [12.5, [255, 205, 121]],
-    [25,   [255, 227, 143]],
-    [37.5, [255, 183, 106]],
-    [50,   [255, 149,  89]],
-    [62.5, [243, 111,  79]],
-    [75,   [226,  93, 122]],
-    [87.5, [123,  91, 176]],
-    [100,  [ 47,  58, 102]]
-  ];
-  var RING_C = 2 * Math.PI * 52;
-
-  function sunColor(pct) {
-    var p = Math.max(0, Math.min(100, pct));
-    for (var i = 0; i < SUN_STOPS.length - 1; i++) {
-      var a = SUN_STOPS[i], b = SUN_STOPS[i + 1];
-      if (p >= a[0] && p <= b[0]) {
-        var t = (p - a[0]) / (b[0] - a[0]);
-        var c = [0, 1, 2].map(function (k) { return Math.round(a[1][k] + (b[1][k] - a[1][k]) * t); });
-        return 'rgb(' + c.join(', ') + ')';
-      }
-    }
-    var last = SUN_STOPS[SUN_STOPS.length - 1][1];
-    return 'rgb(' + last.join(', ') + ')';
-  }
-
-  function fmtHourLabel(h) {
-    var hh = h % 24;
-    var ap = hh >= 12 ? 'PM' : 'AM';
-    var d = hh % 12 || 12;
-    return d + ':00 ' + ap;
-  }
-
-  var lastActiveDate = null;
-
-  function updateDayBar() {
-    var now = new Date();
-    var hours = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-    var fill = $('ringFill');
-    fill.style.strokeDasharray = String(RING_C);
-
-    var pct, color, pctHTML, phase, status, remaining;
-    if (hours < WAKE_HOUR) {
-      pct = 0;
-      color = '#4D4B47';
-      pctHTML = '—';
-      phase = 'SLEEPING';
-      status = '😴 Still sleeping';
-      remaining = fmtHM(WAKE_HOUR - hours) + ' until wake-up';
-    } else if (hours < SLEEP_HOUR) {
-      pct = (hours - WAKE_HOUR) / (SLEEP_HOUR - WAKE_HOUR) * 100;
-      color = sunColor(pct);
-      pctHTML = Math.floor(pct) + '<span class="pct-sign">%</span>';
-      if (pct < 25)      { phase = 'MORNING';   status = '☀️ Morning — fresh start'; }
-      else if (pct < 50) { phase = 'MIDDAY';    status = '⚡ Midday — keep moving'; }
-      else if (pct < 75) { phase = 'AFTERNOON'; status = '🔥 Afternoon — push it'; }
-      else if (pct < 90) { phase = 'EVENING';   status = '⏳ Evening — wrap up'; }
-      else               { phase = 'BEDTIME';   status = '🌙 Bedtime soon'; }
-      remaining = fmtHM(SLEEP_HOUR - hours) + ' awake time left';
-    } else {
-      pct = 100;
-      color = '#E25D7A';
-      pctHTML = '100<span class="pct-sign">%</span>';
-      phase = 'PAST BEDTIME';
-      status = '⚠️ Past bedtime';
-      remaining = 'Sleep!';
-    }
-
-    fill.style.stroke = color;
-    fill.style.strokeDashoffset = String(RING_C * (1 - pct / 100));
-    fill.style.opacity = pct > 0 ? '1' : '0';
-    $('ringPct').innerHTML = pctHTML;
-    $('ringPhase').textContent = phase;
-    $('ringClock').textContent = fmtClock(now);
-    $('dayStatus').textContent = status;
-    $('dayRemaining').textContent = remaining;
-    $('dayHours').textContent = fmtHourLabel(WAKE_HOUR) + ' – ' + fmtHourLabel(SLEEP_HOUR);
-    $('dayRing').setAttribute('aria-label', 'Day ' + Math.floor(pct) + '% through the awake window, ' + phase.toLowerCase());
-
-    checkDayChange();
-  }
-
-  function checkDayChange() {
-    var a = getActiveDateString();
-    if (lastActiveDate === null) { lastActiveDate = a; return; }
-    if (a !== lastActiveDate) {
-      lastActiveDate = a;
-      runStreakCheck();
-      runRollover();
-      renderStreak();
-      loadToday();
-      loadTomorrow();
-    }
-  }
-
-  function startDayRing() {
-    updateDayBar();
-    var now = new Date();
-    var msToNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds() + 50;
-    setTimeout(function () {
-      updateDayBar();
-      setInterval(updateDayBar, 60 * 1000);
-    }, msToNextMinute);
-  }
-
-  /* =====================================================================
-     Body Panel — settings
-     ===================================================================== */
-  function getSettings() {
-    var s = storeGet(SETTINGS_KEY) || {};
-    var athlete = s.athleteId != null && String(s.athleteId).trim() !== '' ? String(s.athleteId).trim() : '0';
-    var goal = Number(s.stepGoal);
-    return {
-      apiKey: typeof s.apiKey === 'string' ? s.apiKey.trim() : '',
-      athleteId: athlete,
-      stepGoal: isFinite(goal) && goal > 0 ? Math.round(goal) : 10000,
-      anthropicKey: typeof s.anthropicKey === 'string' ? s.anthropicKey.trim() : ''
-    };
-  }
-
-  /* =====================================================================
-     Body Panel — data access
-     ===================================================================== */
-  function isNum(v) { return typeof v === 'number' && isFinite(v); }
-  function positive(v) { return isNum(v) && v > 0; }
-
-  function authHeader(apiKey) { return 'Basic ' + btoa('API_KEY:' + apiKey); }
-
-  function getJson(url, apiKey, signal) {
-    var headers;
-    try { headers = { 'Authorization': authHeader(apiKey), 'Accept': 'application/json' }; }
-    catch (e) { var bad = new Error('Invalid key'); bad.status = 401; return Promise.reject(bad); }
-    return fetch(url, { headers: headers, signal: signal, cache: 'no-store' }).then(function (res) {
-      if (!res.ok) {
-        var err = new Error('HTTP ' + res.status);
-        err.status = res.status;
-        throw err;
-      }
-      return res.json();
-    });
-  }
-
-  function athletePath(id) { return API_BASE + '/athlete/' + encodeURIComponent(id); }
-
-  function classifyError(err) {
-    if (err && (err.status === 401 || err.status === 403)) {
-      return { kind: 'auth', text: 'Intervals.icu rejected the API key — check ⚙ settings.' };
-    }
-    if (err && err.status === 404) {
-      return { kind: 'http', text: 'Athlete not found — check the athlete ID in ⚙ settings.' };
-    }
-    if (err && err.status) {
-      return { kind: 'http', text: 'Intervals.icu error ' + err.status + ' — showing cached data.' };
-    }
-    return { kind: 'offline', text: '' };
-  }
-
-  var bodyState = {
-    error: null,
-    loading: false,
-    inflight: null,
-    lastFetchStart: 0,
-    trailingTimer: null,
-    syncPending: false
-  };
-
-  function setLoading(on) {
-    bodyState.loading = on;
-    $('bodyRefreshBtn').classList.toggle('is-spinning', on);
-  }
-
-  function fetchBody() {
-    if (DEMO) { renderBody(makeDemoData()); return Promise.resolve(); }
-    var s = getSettings();
-    if (!s.apiKey) { renderBody(null); return Promise.resolve(); }
-    if (bodyState.inflight) return bodyState.inflight;
-
-    var wait = MIN_FETCH_GAP_MS - (Date.now() - bodyState.lastFetchStart);
-    if (wait > 0) {
-      if (!bodyState.trailingTimer) {
-        bodyState.trailingTimer = setTimeout(function () {
-          bodyState.trailingTimer = null;
-          fetchBody();
-        }, wait + 50);
-      }
-      return Promise.resolve();
-    }
-    if (bodyState.trailingTimer) { clearTimeout(bodyState.trailingTimer); bodyState.trailingTimer = null; }
-
-    bodyState.lastFetchStart = Date.now();
-    setLoading(true);
-
-    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    var timeout = setTimeout(function () { if (ctrl) ctrl.abort(); }, FETCH_TIMEOUT_MS);
-    var signal = ctrl ? ctrl.signal : undefined;
-
-    var today = new Date();
-    var newest = ymd(today);
-    var oldestW = ymd(addDays(today, -13));
-    var oldestA = ymd(addDays(today, -6));
-    var base = athletePath(s.athleteId);
-
-    bodyState.inflight = Promise.all([
-      getJson(base + '/wellness?oldest=' + oldestW + '&newest=' + newest, s.apiKey, signal),
-      getJson(base + '/activities?oldest=' + oldestA + '&newest=' + newest, s.apiKey, signal)
-    ])
-      .then(function (res) {
-        var data = {
-          wellness: Array.isArray(res[0]) ? res[0] : [],
-          activities: Array.isArray(res[1]) ? res[1] : [],
-          fetchedAt: Date.now()
-        };
-        storeSet(CACHE_KEY, data);
-        bodyState.error = null;
-        renderBody(data);
-      })
-      .catch(function (err) {
-        bodyState.error = classifyError(err);
-        renderBody(storeGet(CACHE_KEY));
-      })
-      .then(function () {
-        clearTimeout(timeout);
-        bodyState.inflight = null;
-        setLoading(false);
-      });
-    return bodyState.inflight;
-  }
-
-  /* =====================================================================
-     Body Panel — rendering
-     ===================================================================== */
-  function indexWellness(list) {
-    var map = {};
-    (list || []).forEach(function (r) {
-      if (r && typeof r.id === 'string') map[r.id.slice(0, 10)] = r;
-    });
-    return map;
-  }
-
-  function hasValue(field, v) {
-    if (field === 'sleepSecs' || field === 'hrv' || field === 'restingHR') return positive(v);
-    return isNum(v);
-  }
-
-  function pickMetric(W, field, todayStr) {
-    var t = W[todayStr];
-    if (t && hasValue(field, t[field])) return { value: t[field], date: todayStr, rec: t, fallback: false };
-    var base = parseYmd(todayStr);
-    for (var i = 1; i <= 2; i++) {
-      var d = ymd(addDays(base, -i));
-      var r = W[d];
-      if (r && hasValue(field, r[field])) return { value: r[field], date: d, rec: r, fallback: true };
-    }
-    return null;
-  }
-
-  function baseline(W, field, date) {
-    var dates = Object.keys(W).filter(function (d) { return d < date && hasValue(field, W[d][field]); }).sort();
-    var last7 = dates.slice(-7);
-    if (last7.length < 3) return null;
-    var sum = 0;
-    last7.forEach(function (d) { sum += W[d][field]; });
-    return sum / last7.length;
-  }
-
-  function fmtSleep(secs) {
-    var mins = Math.round(secs / 60);
-    return Math.floor(mins / 60) + 'h ' + pad2(mins % 60) + 'm';
-  }
-  function fmtDuration(secs) {
-    var mins = Math.round(secs / 60);
-    if (mins < 60) return mins + 'm';
-    return Math.floor(mins / 60) + 'h ' + pad2(mins % 60) + 'm';
-  }
-  function signed(n) {
-    if (n > 0) return '+' + n;
-    if (n < 0) return '−' + Math.abs(n);
-    return '±0';
-  }
-  function dayName(dateStr) { return WD[parseYmd(dateStr).getDay()]; }
-
-  function setTile(id, o) {
-    var tile = $(id);
-    var dot = tile.querySelector('.tile-dot');
-    if (o.dot) dot.setAttribute('data-tone', o.dot); else dot.removeAttribute('data-tone');
-    tile.querySelector('.tile-num').textContent = o.num != null ? o.num : '—';
-    tile.querySelector('.tile-unit').textContent = o.num != null && o.unit ? o.unit : '';
-
-    var sub = tile.querySelector('.tile-sub');
-    sub.textContent = '';
-    var parts = (o.sub || []).filter(Boolean);
-    if (parts.length) sub.appendChild(document.createTextNode(parts.join(' · ')));
-    if (o.tag) sub.appendChild(el('span', 'tag', (parts.length ? ' · ' : '') + o.tag));
-    if (!parts.length && !o.tag) sub.textContent = ' ';
-
-    var foot = tile.querySelector('.tile-foot');
-    foot.innerHTML = '';
-    if (o.chip) {
-      var chip = el('span', 'chip', o.chip.text);
-      chip.setAttribute('data-tone', o.chip.tone);
-      foot.appendChild(chip);
-    }
-    if (o.bar) {
-      var bar = el('div', 'step-bar');
-      var fill = el('div', 'step-bar-fill' + (o.bar.pct >= 100 ? ' is-full' : ''));
-      fill.style.width = Math.max(0, Math.min(100, o.bar.pct)) + '%';
-      bar.appendChild(fill);
-      foot.appendChild(bar);
-    }
-  }
-
-  function renderBodyStatus(data) {
-    var upd = $('bodyUpdated');
-    var errEl = $('bodyError');
-    upd.classList.remove('is-warning', 'is-danger');
-    errEl.hidden = true;
-    errEl.textContent = '';
-
-    if (DEMO) { upd.textContent = 'Demo data'; return; }
-
-    var e = bodyState.error;
-    var cachedAt = data && data.fetchedAt ? fmtClock(new Date(data.fetchedAt)) : null;
-    if (e && e.kind === 'offline') {
-      upd.textContent = cachedAt ? 'Offline — cached ' + cachedAt : 'Offline — no cached data';
-      upd.classList.add('is-warning');
-      return;
-    }
-    if (e) {
-      upd.textContent = cachedAt ? 'Cached ' + cachedAt : '';
-      errEl.textContent = e.text;
-      errEl.hidden = false;
-      return;
-    }
-    upd.textContent = cachedAt ? 'Updated ' + cachedAt : (bodyState.loading ? 'Loading…' : '');
-  }
-
-  function renderBody(data) {
-    var s = getSettings();
-    var hasKey = DEMO || !!s.apiKey;
-
-    $('bodyOnboard').hidden = hasKey;
-    $('bodyContent').hidden = !hasKey;
-    $('bodyRefreshBtn').hidden = !hasKey;
-    $('bodySyncBtn').hidden = !hasKey;
-
-    if (!hasKey) {
-      $('bodyHint').hidden = true;
-      $('bodyError').hidden = true;
-      $('bodyUpdated').textContent = '';
-      return;
-    }
-
-    renderBodyStatus(data);
-
-    var wellness = data && Array.isArray(data.wellness) ? data.wellness : [];
-    var activities = data && Array.isArray(data.activities) ? data.activities : [];
-    var W = indexWellness(wellness);
-    var todayStr = ymd(new Date());
-
-    var ZEPP = ['sleepSecs', 'sleepScore', 'sleepQuality', 'avgSleepingHR', 'hrv', 'restingHR', 'steps'];
-    var anyZepp = wellness.some(function (r) {
-      return r && ZEPP.some(function (f) { return isNum(r[f]); });
-    });
-    $('bodyNoData').hidden = !data || anyZepp;
-
-    var todayRec = W[todayStr];
-    $('bodyHint').hidden = !data || !!(todayRec && positive(todayRec.sleepSecs));
-
-    /* SLEEP */
-    var sl = pickMetric(W, 'sleepSecs', todayStr);
-    if (sl) {
-      var hrs = sl.value / 3600;
-      var score = sl.rec && isNum(sl.rec.sleepScore) ? 'Score ' + Math.round(sl.rec.sleepScore) : null;
-      var shr = sl.rec && positive(sl.rec.avgSleepingHR) ? 'Ø HR ' + Math.round(sl.rec.avgSleepingHR) : null;
-      setTile('tileSleep', {
-        dot: hrs >= 7 ? 'success' : (hrs >= 6 ? 'warning' : 'danger'),
-        num: fmtSleep(sl.value),
-        sub: [score, shr],
-        tag: sl.fallback ? 'from ' + dayName(sl.date) : null
-      });
-    } else {
-      setTile('tileSleep', { num: null });
-    }
-
-    /* HRV */
-    var hv = pickMetric(W, 'hrv', todayStr);
-    if (hv) {
-      var hb = baseline(W, 'hrv', hv.date);
-      var chip = null, tone = null;
-      if (hb) {
-        var pctD = Math.round((hv.value - hb) / hb * 100);
-        tone = pctD >= -5 ? 'success' : (pctD >= -15 ? 'warning' : 'danger');
-        chip = { text: signed(pctD) + '% vs 7d', tone: tone };
-      }
-      setTile('tileHrv', {
-        dot: tone,
-        num: String(Math.round(hv.value)),
-        unit: 'ms',
-        sub: [hb && !hv.fallback ? 'Ø 7d ' + Math.round(hb) + ' ms' : null],
-        tag: hv.fallback ? 'from ' + dayName(hv.date) : null,
-        chip: chip
-      });
-    } else {
-      setTile('tileHrv', { num: null });
-    }
-
-    /* RESTING HR */
-    var rh = pickMetric(W, 'restingHR', todayStr);
-    if (rh) {
-      var rb = baseline(W, 'restingHR', rh.date);
-      var rchip = null, rtone = null;
-      if (rb) {
-        var d = Math.round(rh.value - rb);
-        rtone = d <= 2 ? 'success' : (d <= 5 ? 'warning' : 'danger');
-        rchip = { text: signed(d) + ' vs 7d', tone: rtone };
-      }
-      setTile('tileRhr', {
-        dot: rtone,
-        num: String(Math.round(rh.value)),
-        unit: 'bpm',
-        sub: [rb && !rh.fallback ? 'Ø 7d ' + Math.round(rb) + ' bpm' : null],
-        tag: rh.fallback ? 'from ' + dayName(rh.date) : null,
-        chip: rchip
-      });
-    } else {
-      setTile('tileRhr', { num: null });
-    }
-
-    /* STEPS */
-    var st = pickMetric(W, 'steps', todayStr);
-    var goal = s.stepGoal;
-    if (st) {
-      var stepPct = st.value / goal * 100;
-      setTile('tileSteps', {
-        dot: stepPct >= 100 ? 'success' : null,
-        num: Math.round(st.value).toLocaleString('en-US'),
-        sub: ['of ' + goal.toLocaleString('en-US')],
-        tag: st.fallback ? 'from ' + dayName(st.date) : null,
-        bar: { pct: stepPct }
-      });
-    } else {
-      setTile('tileSteps', { num: null, sub: ['of ' + goal.toLocaleString('en-US')], bar: { pct: 0 } });
-    }
-
-    renderTraining(W, activities, todayStr);
-  }
-
-  function renderTraining(W, activities, todayStr) {
-    var load = null;
-    var t = W[todayStr];
-    if (t && isNum(t.ctl) && isNum(t.atl)) load = t;
-    else {
-      var dates = Object.keys(W).filter(function (d) { return isNum(W[d].ctl) && isNum(W[d].atl); }).sort();
-      if (dates.length) load = W[dates[dates.length - 1]];
-    }
-    var fit = $('trFitness'), fat = $('trFatigue'), form = $('trForm');
-    if (load) {
-      fit.textContent = Math.round(load.ctl);
-      fat.textContent = Math.round(load.atl);
-      var f = Math.round(load.ctl - load.atl);
-      form.textContent = signed(f);
-      form.setAttribute('data-tone', f > 5 ? 'success' : (f >= -10 ? 'secondary' : (f >= -30 ? 'warning' : 'danger')));
-    } else {
-      fit.textContent = '—';
-      fat.textContent = '—';
-      form.textContent = '—';
-      form.removeAttribute('data-tone');
-    }
-
-    var todayLoad = 0;
-    activities.forEach(function (a) {
-      if (a && typeof a.start_date_local === 'string' && a.start_date_local.slice(0, 10) === todayStr && isNum(a.icu_training_load)) {
-        todayLoad += a.icu_training_load;
-      }
-    });
-    $('trLoad').textContent = Math.round(todayLoad);
-
-    renderSleepStrip(W, todayStr);
-    renderWorkouts(activities);
-  }
-
-  function renderSleepStrip(W, todayStr) {
-    var base = parseYmd(todayStr);
-    var VB_W = 280, BAR_TOP = 4, BAR_MAX = 70, BAR_BOTTOM = BAR_TOP + BAR_MAX, SLOT = VB_W / 7, BAR_W = 22;
-    var parts = [];
-    var total = 0, count = 0;
-    for (var i = 6; i >= 0; i--) {
-      var date = ymd(addDays(base, -i));
-      var rec = W[date];
-      var secs = rec && positive(rec.sleepSecs) ? rec.sleepSecs : null;
-      var slot = 6 - i;
-      var cx = slot * SLOT + SLOT / 2;
-      var x = cx - BAR_W / 2;
-      var label = dayName(date) + ' · ' + (secs ? fmtSleep(secs) : 'no data');
-      var isToday = i === 0;
-      var shape;
-      if (secs) {
-        total += secs; count++;
-        var h = Math.max(4, Math.min(secs / 3600, 10) / 10 * BAR_MAX);
-        var y = BAR_BOTTOM - h;
-        var r = Math.min(6, h, BAR_W / 2);
-        var d = 'M' + x + ',' + BAR_BOTTOM +
-          ' V' + (y + r) +
-          ' A' + r + ',' + r + ' 0 0 1 ' + (x + r) + ',' + y +
-          ' H' + (x + BAR_W - r) +
-          ' A' + r + ',' + r + ' 0 0 1 ' + (x + BAR_W) + ',' + (y + r) +
-          ' V' + BAR_BOTTOM + ' Z';
-        shape = '<path d="' + d + '" fill="#FFFFFF" fill-opacity="' + (isToday ? '1' : '0.25') + '"/>';
-      } else {
-        shape = '<rect x="' + x + '" y="' + (BAR_BOTTOM - 2) + '" width="' + BAR_W + '" height="2" rx="1" fill="#76746E"/>';
-      }
-      parts.push(
-        '<g data-cap="' + label + '">' +
-          '<title>' + label + '</title>' +
-          shape +
-          '<rect class="hit" x="' + (slot * SLOT) + '" y="0" width="' + SLOT + '" height="96"/>' +
-          '<text x="' + cx + '" y="90" text-anchor="middle"' + (isToday ? ' style="fill:#B8B6B0"' : '') + '>' + WD_INITIAL[parseYmd(date).getDay()] + '</text>' +
-        '</g>'
-      );
-    }
-    var avg = count ? 'Ø ' + fmtSleep(total / count) : '';
-    var strip = $('sleepStrip');
-    strip.innerHTML =
-      '<svg viewBox="0 0 280 96" role="img" aria-label="Sleep over the last 7 days">' +
-        '<line x1="0" y1="' + (BAR_BOTTOM + 0.5) + '" x2="280" y2="' + (BAR_BOTTOM + 0.5) + '" stroke="rgba(255,255,255,0.06)"/>' +
-        parts.join('') +
-      '</svg>';
-    var caption = $('sleepCaption');
-    caption.textContent = avg;
-    caption.dataset.avg = avg;
-  }
-
-  function workoutEmoji(type) {
-    switch (type) {
-      case 'Run': case 'VirtualRun': case 'TrailRun': return '🏃';
-      case 'Ride': case 'VirtualRide': case 'GravelRide': case 'MountainBikeRide': case 'EBikeRide': return '🚴';
-      case 'Walk': case 'Hike': return '🚶';
-      case 'WeightTraining': return '🏋️';
-      case 'Swim': case 'OpenWaterSwim': return '🏊';
-      default: return '⚡';
-    }
-  }
-
-  function renderWorkouts(activities) {
-    var list = $('workoutList');
-    list.innerHTML = '';
-    var sorted = activities
-      .filter(function (a) { return a && typeof a.start_date_local === 'string'; })
-      .sort(function (a, b) { return a.start_date_local < b.start_date_local ? 1 : (a.start_date_local > b.start_date_local ? -1 : 0); })
-      .slice(0, 3);
-    if (!sorted.length) {
-      list.appendChild(el('li', 'wo-empty', 'No workouts in the last 7 days.'));
-      return;
-    }
-    sorted.forEach(function (a) {
-      var li = el('li', 'workout');
-      li.appendChild(el('span', 'wo-emoji', workoutEmoji(a.type)));
-      var name = (typeof a.name === 'string' && a.name.trim()) ? a.name.trim() : (a.type || 'Workout');
-      var nm = el('span', 'wo-name', name);
-      nm.title = name + ' · ' + dayName(a.start_date_local.slice(0, 10));
-      li.appendChild(nm);
-      var meta = [];
-      if (positive(a.moving_time)) meta.push(fmtDuration(a.moving_time));
-      if (positive(a.average_heartrate)) meta.push(Math.round(a.average_heartrate) + ' bpm');
-      if (isNum(a.icu_training_load)) meta.push(Math.round(a.icu_training_load) + ' load');
-      li.appendChild(el('span', 'wo-meta', meta.join(' · ')));
-      list.appendChild(li);
-    });
-  }
-
-  /* Tap a sleep bar → show its value in the caption (phones have no hover) */
-  $('sleepStrip').addEventListener('click', function (e) {
-    var g = e.target && e.target.closest ? e.target.closest('[data-cap]') : null;
-    var caption = $('sleepCaption');
-    if (!g) return;
-    var cap = g.getAttribute('data-cap');
-    caption.textContent = caption.textContent === cap ? (caption.dataset.avg || '') : cap;
-  });
-
-  /* =====================================================================
-     Demo data (?demo=1) — never written to the cache
-     ===================================================================== */
-  var demoCache = null;
-  function makeDemoData() {
-    if (demoCache) return demoCache;
-    var today = new Date();
-    var seedStr = ymd(today);
-    var seed = 0;
-    for (var i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
-    function rand() {
-      seed = (seed + 0x6D2B79F5) >>> 0;
-      var t = seed;
-      t = Math.imul(t ^ (t >>> 15), t | 1);
-      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    }
-    function between(a, b) { return a + rand() * (b - a); }
-
-    var wellness = [];
-    var ctl = 42, atl = 46;
-    for (var d = 13; d >= 0; d--) {
-      var date = ymd(addDays(today, -d));
-      ctl += between(-0.8, 1.2);
-      atl += between(-4, 4.5);
-      var rec = {
-        id: date,
-        sleepSecs: Math.round(between(6, 8.5) * 3600),
-        sleepScore: Math.round(between(62, 92)),
-        sleepQuality: Math.round(between(1, 4)),
-        avgSleepingHR: Math.round(between(47, 56)),
-        hrv: Math.round(between(35, 60)),
-        restingHR: Math.round(between(50, 60)),
-        steps: Math.round(between(4000, 14000)),
-        ctl: Math.round(ctl * 10) / 10,
-        atl: Math.round(atl * 10) / 10,
-        updated: date + 'T07:15:00'
-      };
-      if (d === 0) {
-        rec.hrv = null; // Zepp sometimes files HRV under the previous day
-        rec.steps = Math.round(between(4000, 9000));
-      }
-      wellness.push(rec);
-    }
-
-    var pool = [
-      { type: 'Run', name: 'Morning Run', hr: [138, 156], min: [28, 55], load: [35, 70] },
-      { type: 'WeightTraining', name: 'Upper Body Strength', hr: [102, 122], min: [40, 65], load: [20, 40] },
-      { type: 'Ride', name: 'Evening Ride', hr: [125, 145], min: [50, 95], load: [45, 90] },
-      { type: 'Walk', name: 'Lunch Walk', hr: [88, 102], min: [25, 45], load: [6, 14] }
-    ];
-    var n = rand() < 0.5 ? 2 : 3;
-    var used = {};
-    var activities = [];
-    for (var k = 0; k < n; k++) {
-      var ago;
-      do { ago = Math.floor(between(0, 7)); } while (used[ago]);
-      used[ago] = true;
-      var p = pool[Math.floor(rand() * pool.length)];
-      activities.push({
-        name: p.name,
-        type: p.type,
-        start_date_local: ymd(addDays(today, -ago)) + 'T' + pad2(Math.floor(between(6, 19))) + ':' + pad2(Math.floor(between(0, 59))) + ':00',
-        moving_time: Math.round(between(p.min[0], p.min[1]) * 60),
-        average_heartrate: Math.round(between(p.hr[0], p.hr[1])),
-        icu_training_load: Math.round(between(p.load[0], p.load[1]))
-      });
-    }
-    demoCache = { wellness: wellness, activities: activities, fetchedAt: Date.now() };
-    return demoCache;
-  }
-
-  /* =====================================================================
-     Settings sheet
-     ===================================================================== */
-  var sheet = $('settingsSheet');
-  var backdrop = $('settingsBackdrop');
-  var settingsCloseTimer = null;
-  var lastFocus = null;
-
-  function openSettings() {
-    var s = getSettings();
-    $('setApiKey').value = s.apiKey;
-    $('setApiKey').type = 'password';
-    $('toggleApiKey').textContent = 'Show';
-    $('setAthleteId').value = s.athleteId;
-    $('setStepGoal').value = s.stepGoal;
-    $('setAnthropicKey').value = s.anthropicKey;
-    var res = $('settingsResult');
-    res.textContent = '';
-    res.className = 'sheet-result';
-    clearTimeout(settingsCloseTimer);
-    lastFocus = document.activeElement;
-    sheet.classList.add('is-open');
-    backdrop.classList.add('is-open');
-    sheet.setAttribute('aria-hidden', 'false');
-    setTimeout(function () { $(s.apiKey ? 'settingsSave' : 'setApiKey').focus({ preventScroll: true }); }, 320);
-  }
-
-  function closeSettings() {
-    sheet.classList.remove('is-open');
-    backdrop.classList.remove('is-open');
-    sheet.setAttribute('aria-hidden', 'true');
-    clearTimeout(settingsCloseTimer);
-    if (lastFocus && lastFocus.focus) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
-  }
-
-  function saveAndTest() {
-    var res = $('settingsResult');
-    var prev = getSettings();
-    var apiKey = $('setApiKey').value.trim();
-    var athleteId = $('setAthleteId').value.trim() || '0';
-    var goalNum = Math.round(Number($('setStepGoal').value));
-    var next = {
-      apiKey: apiKey,
-      athleteId: athleteId,
-      stepGoal: isFinite(goalNum) && goalNum > 0 ? goalNum : 10000,
-      anthropicKey: $('setAnthropicKey').value.trim()
-    };
-    if (prev.apiKey !== apiKey || prev.athleteId !== athleteId) {
-      storeDelete(CACHE_KEY);
-      bodyState.error = null;
-      bodyState.lastFetchStart = 0;
-    }
-    storeSet(SETTINGS_KEY, next);
-
-    if (!apiKey) {
-      res.className = 'sheet-result is-muted';
-      res.textContent = 'Saved. Add an Intervals.icu key to load your data.';
-      renderBody(DEMO ? makeDemoData() : null);
-      return;
-    }
-
-    var saveBtn = $('settingsSave');
-    saveBtn.disabled = true;
-    res.className = 'sheet-result is-muted';
-    res.textContent = 'Testing connection…';
-
-    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    var timeout = setTimeout(function () { if (ctrl) ctrl.abort(); }, FETCH_TIMEOUT_MS);
-    var t = ymd(new Date());
-    getJson(athletePath(athleteId) + '/wellness?oldest=' + t + '&newest=' + t, apiKey, ctrl ? ctrl.signal : undefined)
-      .then(function () {
-        res.className = 'sheet-result is-ok';
-        res.textContent = '✓ Connected';
-        if (!DEMO) {
-          bodyState.lastFetchStart = 0;
-          bodyState.error = null;
-          renderBody(storeGet(CACHE_KEY));
-          fetchBody();
-        }
-        settingsCloseTimer = setTimeout(closeSettings, 1100);
-      })
-      .catch(function (err) {
-        res.className = 'sheet-result is-error';
-        var c = classifyError(err);
-        res.textContent = c.kind === 'offline' ? 'Couldn’t reach Intervals.icu — check your connection.' : c.text.replace(' — showing cached data.', '.');
-        if (!DEMO) renderBody(storeGet(CACHE_KEY));
-      })
-      .then(function () {
-        clearTimeout(timeout);
-        saveBtn.disabled = false;
-      });
-  }
-
-  $('bodySettingsBtn').addEventListener('click', openSettings);
-  $('bodyOnboardBtn').addEventListener('click', openSettings);
-  $('settingsCancel').addEventListener('click', closeSettings);
-  backdrop.addEventListener('click', closeSettings);
-  $('settingsSave').addEventListener('click', saveAndTest);
-  $('toggleApiKey').addEventListener('click', function () {
-    var inp = $('setApiKey');
-    var show = inp.type === 'password';
-    inp.type = show ? 'text' : 'password';
-    this.textContent = show ? 'Hide' : 'Show';
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && sheet.classList.contains('is-open')) closeSettings();
-  });
-  ['setApiKey', 'setAthleteId', 'setStepGoal', 'setAnthropicKey'].forEach(function (id) {
-    $(id).addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); saveAndTest(); }
-    });
-  });
-
-  /* =====================================================================
-     Body Panel — buttons, auto refresh, visibility
-     ===================================================================== */
-  $('bodyRefreshBtn').addEventListener('click', function () {
-    var btn = this;
-    btn.classList.add('is-spinning');
-    var p = fetchBody();
-    setTimeout(function () { if (!bodyState.loading) btn.classList.remove('is-spinning'); }, 800);
-    return p;
-  });
-
-  $('bodySyncBtn').addEventListener('click', function () {
-    bodyState.syncPending = true;
-    window.open('https://intervals.icu/calendar', '_blank', 'noopener');
-  });
-
-  function startBody() {
-    if (DEMO) renderBody(makeDemoData());
-    else renderBody(storeGet(CACHE_KEY));
-    fetchBody();
-    setInterval(fetchBody, AUTO_REFRESH_MS);
-  }
-
-  document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState !== 'visible') return;
-    updateDayBar();
-    if (DEMO) return;
-    if (bodyState.syncPending) {
-      bodyState.syncPending = false;
-      fetchBody();
-      setTimeout(fetchBody, MIN_FETCH_GAP_MS + 1000);
-      return;
-    }
-    if (Date.now() - bodyState.lastFetchStart > STALE_ON_VISIBLE_MS) fetchBody();
-  });
-
-  /* =====================================================================
-     Boot
-     ===================================================================== */
-  runStreakCheck();
-  runRollover();
-
-  makeAddHandlers($('goalInput'), $('goalAddBtn'), $('goalPolishBtn'), todayKey, $('polishStatus'), loadToday);
-  makeAddHandlers($('tomorrowInput'), $('tomorrowAddBtn'), $('tomorrowPolishBtn'), tomorrowKey, $('tomorrowStatus'), loadTomorrow);
-  $('gmPushBtn').addEventListener('click', pushRemaining);
-
-  loadToday();
-  loadTomorrow();
-  renderStreak();
-  startDayRing();
-  Ticker.start();
-  startBody();
-})();
-</script>
+<div class="sheet" id="measureSheet" role="dialog" aria-modal="true" aria-labelledby="measureTitle" aria-hidden="true">
+  <div class="sheet-grabber"></div>
+  <div class="sheet-head"><h2 id="measureTitle">Messung eintragen</h2></div>
+  <div class="field">
+    <label class="field-label" for="measureDate">Gemessen am</label>
+    <input type="date" id="measureDate" class="text-input">
+  </div>
+  <div class="field-grid">
+    <div class="field">
+      <label class="field-label" for="measureWeight">Gewicht (kg)</label>
+      <input type="text" id="measureWeight" class="text-input" inputmode="decimal" autocomplete="off">
+    </div>
+    <div class="field">
+      <label class="field-label" for="measureFat">Körperfett (%)</label>
+      <input type="text" id="measureFat" class="text-input" inputmode="decimal" autocomplete="off">
+    </div>
+  </div>
+  <p class="sheet-note" id="measureNote"></p>
+  <div class="sheet-result" id="measureResult" aria-live="polite"></div>
+  <div class="sheet-actions">
+    <button type="button" class="btn-secondary" id="measureCancel">Abbrechen</button>
+    <button type="button" class="btn-primary" id="measureSave">Speichern</button>
+  </div>
+</div>
+
+<div class="sheet" id="expSheet" role="dialog" aria-modal="true" aria-labelledby="expFormTitle" aria-hidden="true">
+  <div class="sheet-grabber"></div>
+  <div class="sheet-head"><h2 id="expFormTitle">Neues Experiment</h2></div>
+  <div class="field">
+    <label class="field-label" for="expName">Was probierst du aus?</label>
+    <input type="text" id="expName" class="text-input" placeholder="z. B. Kein Koffein nach 14 Uhr" maxlength="80" autocomplete="off">
+  </div>
+  <div class="field-grid">
+    <div class="field">
+      <label class="field-label" for="expStart">Start</label>
+      <input type="date" id="expStart" class="text-input">
+    </div>
+    <div class="field">
+      <label class="field-label" for="expEnd">Ende (optional)</label>
+      <input type="date" id="expEnd" class="text-input">
+    </div>
+  </div>
+  <div class="field">
+    <label class="field-label" for="expMetric">Welcher Wert soll sich verändern?</label>
+    <select id="expMetric" class="select-input"></select>
+    <div class="field-hint">Du kannst später unter „Alle Werte prüfen“ auch alle anderen Werte checken.</div>
+  </div>
+  <div class="field">
+    <label class="field-label" for="expNote">Notiz (optional)</label>
+    <input type="text" id="expNote" class="text-input" maxlength="300" autocomplete="off">
+  </div>
+  <div class="sheet-result" id="expResult" aria-live="polite"></div>
+  <div class="sheet-actions">
+    <button type="button" class="btn-secondary" id="expCancel">Abbrechen</button>
+    <button type="button" class="btn-primary" id="expSave">Speichern</button>
+  </div>
+</div>
+
+<div class="sheet" id="photoSheet" role="dialog" aria-modal="true" aria-labelledby="photoTitle" aria-hidden="true">
+  <div class="sheet-grabber"></div>
+  <div class="sheet-head"><h2 id="photoTitle">Fortschrittsfoto hinzufügen</h2></div>
+  <label class="file-pick">
+    <div id="photoPreview"></div>
+    <input type="file" id="photoFile" accept="image/jpeg,image/png,image/webp,image/*">
+  </label>
+  <div class="field-grid" style="margin-top:14px">
+    <div class="field">
+      <label class="field-label" for="photoDate">Aufgenommen am</label>
+      <input type="date" id="photoDate" class="text-input">
+    </div>
+    <div class="field">
+      <label class="field-label" for="photoNoteInput">Notiz (optional)</label>
+      <input type="text" id="photoNoteInput" class="text-input" maxlength="200" autocomplete="off">
+    </div>
+  </div>
+  <p class="sheet-note">Das Foto wird verkleinert und nur auf diesem Gerät gespeichert. Es wird nirgends hochgeladen.</p>
+  <div class="sheet-result" id="photoResult" aria-live="polite"></div>
+  <div class="sheet-actions">
+    <button type="button" class="btn-secondary" id="photoCancel">Abbrechen</button>
+    <button type="button" class="btn-primary" id="photoSave">Speichern</button>
+  </div>
+</div>
+
+<div class="sheet wide photo-viewer" id="viewerSheet" role="dialog" aria-modal="true" aria-labelledby="viewerTitle" aria-hidden="true">
+  <div class="sheet-grabber"></div>
+  <div class="sheet-head"><h2 id="viewerTitle">Foto</h2><button type="button" class="icon-btn" id="viewerClose" aria-label="Schließen" data-icon="close"></button></div>
+  <img id="viewerImg" alt="Fortschrittsfoto">
+  <p class="exp-note" id="viewerNote" style="margin-top:10px" hidden></p>
+  <div class="btn-row" style="margin-top:14px">
+    <button type="button" class="btn-secondary btn-small" id="viewerCompare">Vergleichen mit…</button>
+    <button type="button" class="text-btn" id="viewerHide">Aus Galerie ausblenden</button>
+  </div>
+</div>
+
+<div class="sheet wide" id="compareSheet" role="dialog" aria-modal="true" aria-labelledby="compareTitle" aria-hidden="true">
+  <div class="sheet-grabber"></div>
+  <div class="sheet-head"><h2 id="compareTitle">Vergleich</h2><button type="button" class="icon-btn" id="cmpClose" aria-label="Schließen" data-icon="close"></button></div>
+  <div class="field-grid">
+    <div class="field"><label class="field-label" for="cmpA">Links</label><select id="cmpA" class="select-input"></select></div>
+    <div class="field"><label class="field-label" for="cmpB">Rechts</label><select id="cmpB" class="select-input"></select></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+    <div class="segmented">
+      <button type="button" id="cmpModeSlider" aria-pressed="true">Schieberegler</button>
+      <button type="button" id="cmpModeSide" aria-pressed="false">Nebeneinander</button>
+    </div>
+    <div><span class="muted small mono" id="cmpDiff"></span> <button type="button" class="text-btn" id="cmpSwap">Tauschen ⇄</button></div>
+  </div>
+  <div id="cmpSlider">
+    <div class="compare-stage">
+      <img id="cmpImgB" alt="Rechtes Foto">
+      <img id="cmpImgA" class="cmp-top" alt="Linkes Foto">
+      <div class="compare-line" id="cmpLine"></div>
+      <span class="compare-tag l" id="cmpTagA"></span>
+      <span class="compare-tag r" id="cmpTagB"></span>
+    </div>
+    <input type="range" class="cmp-range" id="cmpRange" min="0" max="100" value="50" aria-label="Trennlinie verschieben">
+  </div>
+  <div class="compare-side" id="cmpSide" hidden>
+    <figure><img id="cmpSideA" alt="Linkes Foto"><figcaption id="cmpCapA"></figcaption></figure>
+    <figure><img id="cmpSideB" alt="Rechtes Foto"><figcaption id="cmpCapB"></figcaption></figure>
+  </div>
+</div>
+
+<div class="sheet wide" id="askSheet" role="dialog" aria-modal="true" aria-labelledby="askTitle" aria-hidden="true">
+  <div class="sheet-grabber"></div>
+  <div class="sheet-head">
+    <h2 id="askTitle">✦ Frag Claude</h2>
+    <div class="btn-row">
+      <button type="button" class="text-btn" id="askReset" hidden>Neues Gespräch</button>
+      <button type="button" class="icon-btn" id="askClose" aria-label="Schließen" data-icon="close"></button>
+    </div>
+  </div>
+  <p class="sheet-note" id="askNoKey" hidden>Ohne Anthropic-Schlüssel kopiert „Prompt kopieren“ deine Frage zusammen mit deinen Daten. Öffne dann <a href="https://claude.ai/new" target="_blank" rel="noopener">claude.ai</a> und füge sie ein. Mit Schlüssel (⚙) antwortet Claude direkt hier.</p>
+  <div class="ask-chips" id="askChips">
+    <button type="button" class="chip-btn">Wie war meine letzte Woche?</button>
+    <button type="button" class="chip-btn">Was beeinflusst meinen Schlaf am meisten?</button>
+    <button type="button" class="chip-btn">Wirken meine Experimente?</button>
+    <button type="button" class="chip-btn">Worauf sollte ich mich diese Woche konzentrieren?</button>
+  </div>
+  <div class="ask-thread" id="askThread"></div>
+  <div class="ask-input-row">
+    <textarea id="askInput" class="text-input" rows="2" placeholder="Frag etwas über deine Daten…" maxlength="1000"></textarea>
+    <button type="button" class="btn-primary" id="askSend">Fragen</button>
+  </div>
+  <details class="ask-context" style="margin-top:12px">
+    <summary>Was Claude sieht</summary>
+    <pre id="askContextPre"></pre>
+    <button type="button" class="text-btn" id="askCopyCtx">Daten kopieren</button>
+  </details>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/core.js?v=7"></script>
+<script src="js/goals.js?v=7"></script>
+<script src="js/body.js?v=7"></script>
+<script src="js/history.js?v=7"></script>
+<script src="js/experiments.js?v=7"></script>
+<script src="js/photos.js?v=7"></script>
+<script src="js/ask.js?v=7"></script>
+<script src="js/app.js?v=7"></script>
 </body>
 </html>
