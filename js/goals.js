@@ -1,5 +1,5 @@
 /* =====================================================================
-   goals.js — Ziele: heute, morgen, Ticker, Rollover, Serie, Historie
+   goals.js — Ziele: Wochenziele, heute, morgen, Ticker, Rückblick
    ===================================================================== */
 (function () {
   'use strict';
@@ -7,12 +7,14 @@
   var $ = D.$, el = D.el;
 
   var PREFIX = 'goals:';
+  var WPREFIX = 'weekgoals:';
   var STREAK_KEY = 'goal_streak_v1';
   var HISTORY_KEY = 'goal_history_v1';
-  var COLLAPSE_LIMIT = 5;
+  var COLLAPSE_LIMIT = 6;
 
   function todayKey() { return PREFIX + D.activeDate(); }
   function tomorrowKey() { return PREFIX + D.tomorrowDate(); }
+  function thisMonday() { return D.mondayOf(D.activeDate()); }
 
   function getGoals(key) {
     var v = D.storeGet(key);
@@ -32,7 +34,7 @@
   D.getGoals = getGoals;
   D.todayGoalsKey = todayKey;
 
-  /* ---------------- History (archived days) ---------------- */
+  /* ---------------- Daily history ---------------- */
   function history() {
     return D.memo('goalHistory', function () {
       var h = D.storeGet(HISTORY_KEY);
@@ -42,45 +44,20 @@
   function archiveDay(date, goals) {
     if (!goals.length) return;
     var h = D.storeGet(HISTORY_KEY) || {};
-    h[date] = {
-      t: goals.length,
-      d: goals.filter(function (g) { return g.done; }).length,
-      g: goals.map(function (g) { return [g.text, g.done ? 1 : 0]; })
-    };
+    h[date] = { t: goals.length, d: goals.filter(function (g) { return g.done; }).length, g: goals.map(function (g) { return [g.text, g.done ? 1 : 0]; }) };
     D.storeSet(HISTORY_KEY, h);
-    D.bump();
   }
-  /* Day summary: archived history, or live data for today / un-rolled days. */
   function daySummary(date) {
     var live = D.storeGet(PREFIX + date);
     if (Array.isArray(live)) {
       var goals = getGoals(PREFIX + date);
       if (!goals.length) return null;
-      return {
-        t: goals.length,
-        d: goals.filter(function (g) { return g.done; }).length,
-        g: goals.map(function (g) { return [g.text, g.done ? 1 : 0]; }),
-        live: true
-      };
+      return { t: goals.length, d: goals.filter(function (g) { return g.done; }).length };
     }
     return history()[date] || null;
   }
-  D.goalDaySummary = daySummary;
-  D.goalRatioOn = function (date) {
-    var s = daySummary(date);
-    return s && s.t > 0 ? Math.round(s.d / s.t * 100) : null;
-  };
-  D.goalDates = function () {
-    var set = {};
-    Object.keys(history()).forEach(function (d) { set[d] = true; });
-    D.storeListKeys(PREFIX).forEach(function (k) {
-      var d = k.slice(PREFIX.length);
-      if (d <= D.activeDate()) set[d] = true;
-    });
-    return Object.keys(set).sort();
-  };
 
-  /* ---------------- Streak + rollover ---------------- */
+  /* ---------------- Streak + rollover (unchanged rules) ---------------- */
   function runStreakCheck() {
     var active = D.activeDate();
     var st = D.storeGet(STREAK_KEY) || {};
@@ -101,7 +78,6 @@
     });
     D.storeSet(STREAK_KEY, { count: count, lastProcessedDate: last });
   }
-
   function runRollover() {
     var active = D.activeDate();
     var oldKeys = D.storeListKeys(PREFIX).filter(function (k) { return k.slice(PREFIX.length) < active; }).sort();
@@ -127,60 +103,136 @@
     if (changed) saveGoals(tk, today);
     oldKeys.forEach(function (k) { D.storeDelete(k); });
   }
-
-  function longestStreak() {
-    var dates = D.goalDates();
-    var best = 0, cur = 0;
-    dates.forEach(function (d) {
-      if (d >= D.activeDate()) return;
-      var s = daySummary(d);
-      if (!s || !s.t) return;
-      if (s.d === s.t) { cur++; best = Math.max(best, cur); } else cur = 0;
-    });
-    return best;
-  }
-
-  /* ---------------- Rendering: today / tomorrow lists ---------------- */
-  var expanded = {};
-  var justChecked = null;
-  var dragState = null;
-  var touchDrag = null;
-
   function streakCount() {
     var st = D.storeGet(STREAK_KEY) || {};
     return typeof st.count === 'number' && st.count > 0 ? st.count : 0;
   }
 
+  /* ---------------- Weekly goals ---------------- */
+  function getWeek(monday) {
+    var v = D.storeGet(WPREFIX + monday);
+    if (!Array.isArray(v)) return [];
+    return v.filter(function (g) { return g && typeof g.text === 'string' && g.text.trim(); }).map(function (g) {
+      var target = Math.max(1, Math.min(14, Math.round(Number(g.target) || 1)));
+      return { id: g.id || D.uid('w'), text: g.text, target: target, count: Math.max(0, Math.min(target, Math.round(Number(g.count) || 0))) };
+    });
+  }
+  function saveWeek(monday, list) { D.storeSet(WPREFIX + monday, list); }
+  D.weekGoals = function (monday) { return getWeek(monday || thisMonday()); };
+
+  function renderWeekly() {
+    var monday = thisMonday();
+    var list = getWeek(monday);
+    var done = list.filter(function (g) { return g.count >= g.target; }).length;
+    $('wgTitle').textContent = 'KW ' + D.isoWeek(monday) + ' · ' + D.fmtDayMonth(monday) + ' – ' + D.fmtDayMonth(D.shift(monday, 6));
+    $('wgProgress').textContent = list.length ? done + ' von ' + list.length + ' geschafft' : 'Noch keine Wochenziele';
+    var wrap = $('wgList');
+    wrap.innerHTML = '';
+    $('wgEmpty').hidden = list.length > 0;
+    list.forEach(function (g, idx) {
+      var row = el('li', 'wg-item' + (g.count >= g.target ? ' done' : ''));
+      if (g.target === 1) {
+        var c = makeCheck(g.count >= 1, false, '„' + g.text + '“ erledigt');
+        c.input.addEventListener('change', function () { update(idx, c.input.checked ? 1 : 0); });
+        row.appendChild(c.wrap);
+      }
+      var main = el('div', 'wg-main');
+      main.appendChild(el('div', 'wg-text', g.text));
+      if (g.target > 1) {
+        var pips = el('div', 'wg-pips');
+        for (var i = 0; i < g.target; i++) pips.appendChild(el('i', i < g.count ? 'on' : ''));
+        pips.appendChild(el('span', 'wg-count', g.count + '/' + g.target));
+        main.appendChild(pips);
+      }
+      row.appendChild(main);
+      if (g.target > 1) {
+        var st = el('div', 'stepper');
+        var minus = el('button', 'icon-btn', '−');
+        minus.type = 'button';
+        minus.setAttribute('aria-label', 'Eins weniger');
+        minus.disabled = g.count <= 0;
+        minus.addEventListener('click', function () { update(idx, g.count - 1); });
+        var plus = el('button', 'icon-btn dark', '+');
+        plus.type = 'button';
+        plus.setAttribute('aria-label', 'Eins mehr');
+        plus.disabled = g.count >= g.target;
+        plus.addEventListener('click', function () { update(idx, g.count + 1); });
+        st.appendChild(minus);
+        st.appendChild(plus);
+        row.appendChild(st);
+      }
+      var del = el('button', 'row-btn goal-delete', '×');
+      del.type = 'button';
+      del.setAttribute('aria-label', '„' + g.text + '“ löschen');
+      del.addEventListener('click', function () {
+        var l = getWeek(monday);
+        var removed = l.splice(idx, 1)[0];
+        saveWeek(monday, l);
+        renderWeekly();
+        D.toast('Wochenziel gelöscht', { label: 'Rückgängig', fn: function () { var x = getWeek(monday); x.splice(idx, 0, removed); saveWeek(monday, x); renderWeekly(); } });
+      });
+      row.appendChild(del);
+      wrap.appendChild(row);
+    });
+    function update(idx, count) {
+      var l = getWeek(monday);
+      if (!l[idx]) return;
+      var wasDone = l[idx].count >= l[idx].target;
+      l[idx].count = Math.max(0, Math.min(l[idx].target, count));
+      saveWeek(monday, l);
+      renderWeekly();
+      if (!wasDone && l[idx].count >= l[idx].target) D.toast('Wochenziel geschafft 🎉');
+    }
+    var prev = getWeek(D.shift(monday, -7));
+    var copyBtn = $('wgCopyBtn');
+    copyBtn.hidden = list.length > 0 || prev.length === 0;
+    copyBtn.textContent = 'Ziele von letzter Woche übernehmen (' + prev.length + ')';
+    renderMini();
+  }
+  function addWeekly() {
+    var input = $('wgInput');
+    var text = input.value.replace(/\s+/g, ' ').trim();
+    if (!text) { input.focus(); return; }
+    var monday = thisMonday();
+    var l = getWeek(monday);
+    l.push({ id: D.uid('w'), text: text.slice(0, 120), target: Number($('wgTarget').value) || 1, count: 0 });
+    saveWeek(monday, l);
+    input.value = '';
+    renderWeekly();
+  }
+
+  /* ---------------- Daily lists ---------------- */
+  var expanded = {};
+  var justChecked = null;
+  var dragState = null;
+  var touchDrag = null;
+
   function renderTodayHeader() {
     var goals = getGoals(todayKey());
     var total = goals.length;
     var done = goals.filter(function (g) { return g.done; }).length;
-    $('todayLabel').textContent = 'Heute — ' + D.fmtDay(D.activeDate());
+    $('todayLabel').textContent = D.fmtDayLong(D.activeDate());
     $('gmProgressNum').textContent = done;
-    $('gmProgressTotal').textContent = '/ ' + total;
+    $('gmProgressTotal').textContent = total;
     var allDone = total > 0 && done === total;
-    $('gmProgressLabel').textContent = total === 0 ? 'noch keine Ziele' : (allDone ? 'alles erledigt — starker Tag' : 'erledigt');
+    $('gmProgressLabel').textContent = total === 0 ? 'Noch keine Ziele für heute' : (allDone ? 'Alles erledigt — starker Tag 🎉' : 'erledigt');
     var bar = $('gmBar');
     bar.innerHTML = '';
-    goals.forEach(function (g) { bar.appendChild(el('div', 'gm-bar-seg' + (g.done ? ' gm-bar-seg-done' : ''))); });
-    $('gmTodayCard').classList.toggle('gm-all-done', allDone);
+    goals.forEach(function (g) { bar.appendChild(el('i', g.done ? 'on' : '')); });
     var pending = total - done;
     var push = $('gmPushBtn');
     push.hidden = pending === 0;
     push.textContent = '→ ' + pending + ' offene' + (pending === 1 ? 's Ziel' : ' Ziele') + ' auf morgen verschieben';
+    var s = streakCount();
+    var sb = $('gmStreak');
+    sb.textContent = '⚡ ' + s + (s === 1 ? ' Tag' : ' Tage') + ' in Folge';
+    sb.classList.toggle('is-active', s > 0);
+    sb.title = 'Tage in Folge, an denen du alle Tagesziele erledigt hast';
   }
-
-  function renderStreak() {
-    var count = streakCount();
-    $('gmStreakNum').textContent = count;
-    $('gmStreak').classList.toggle('gm-streak-active', count > 0);
-    $('gmStreakLabel').textContent = count === 1 ? 'Tag Serie' : 'Tage Serie';
-  }
-
   function renderTomorrowCount() {
     var n = getGoals(tomorrowKey()).length;
-    $('tomorrowLabel').textContent = 'Morgen planen — ' + D.fmtDay(D.tomorrowDate());
-    $('gmTomorrowCount').textContent = n + ' geplant';
+    $('tomorrowLabel').textContent = 'Morgen · ' + D.fmtDay(D.tomorrowDate());
+    $('gmTomorrowCount').textContent = n ? n + ' geplant' : '';
   }
 
   function renderListInto(goals, listEl, emptyEl, key, readOnly) {
@@ -193,7 +245,7 @@
       listEl.appendChild(buildGoalRow(goals[i], i, key, readOnly, listEl));
     }
     if (goals.length > COLLAPSE_LIMIT) {
-      var more = el('li', 'gm-more', showAll ? 'Weniger anzeigen ▴' : (goals.length - COLLAPSE_LIMIT) + ' weitere anzeigen ▾');
+      var more = el('li', 'gm-more', showAll ? 'Weniger anzeigen' : (goals.length - COLLAPSE_LIMIT) + ' weitere anzeigen');
       more.setAttribute('role', 'button');
       more.tabIndex = 0;
       var toggle = function () { expanded[listEl.id] = !showAll; reload(); };
@@ -204,10 +256,10 @@
     justChecked = null;
     if (readOnly) renderTomorrowCount(); else renderTodayHeader();
   }
-
   function loadToday() {
     var k = todayKey();
     renderListInto(getGoals(k), $('goalList'), $('emptyState'), k, false);
+    renderMini();
   }
   function loadTomorrow() {
     var k = tomorrowKey();
@@ -223,13 +275,11 @@
     if (disabled) {
       cb.disabled = true;
       check.title = 'Wird morgen um 6 Uhr aktiv';
-      cb.title = 'Wird morgen um 6 Uhr aktiv';
     }
     check.appendChild(cb);
     check.appendChild(el('span', 'goal-check-box'));
     return { wrap: check, input: cb };
   }
-
   function setDone(key, idx, on) {
     var goals = getGoals(key);
     if (!goals[idx]) return;
@@ -247,27 +297,22 @@
     if (justChecked && justChecked.key === key && justChecked.idx === idx) cls += ' just-checked';
     var li = el('li', cls);
     li.dataset.idx = String(idx);
-
     var handle = el('span', 'goal-drag', '⋮⋮');
     handle.title = 'Ziehen zum Sortieren';
     handle.setAttribute('aria-hidden', 'true');
-
     var check = makeCheck(goal.done, readOnly, '„' + goal.text + '“ als erledigt markieren');
     var text = el('span', 'goal-text', goal.text);
     text.title = 'Tippen zum Bearbeiten';
-
     var q = el('button', 'row-btn gm-queue-btn' + (goal.queued && !readOnly ? ' is-active' : ''), '⚡');
     q.type = 'button';
-    q.title = readOnly ? 'Wird morgen um 6 Uhr aktiv' : (goal.queued ? 'Priorität – für dein Fokusfenster vorgemerkt' : 'Als Priorität vormerken');
-    q.setAttribute('aria-label', 'Als Priorität vormerken');
+    q.title = readOnly ? 'Wird morgen um 6 Uhr aktiv' : 'Als wichtig markieren';
+    q.setAttribute('aria-label', 'Als wichtig markieren');
     q.setAttribute('aria-pressed', goal.queued && !readOnly ? 'true' : 'false');
     if (readOnly) q.disabled = true;
-
     var del = el('button', 'row-btn goal-delete', '×');
     del.type = 'button';
     del.title = 'Löschen';
     del.setAttribute('aria-label', '„' + goal.text + '“ löschen');
-
     li.appendChild(handle);
     li.appendChild(check.wrap);
     li.appendChild(text);
@@ -275,10 +320,7 @@
     li.appendChild(del);
 
     if (!readOnly) {
-      check.input.addEventListener('change', function () {
-        setDone(key, idx, check.input.checked);
-        reload();
-      });
+      check.input.addEventListener('change', function () { setDone(key, idx, check.input.checked); reload(); });
       q.addEventListener('click', function (e) {
         e.stopPropagation();
         var goals = getGoals(key);
@@ -293,7 +335,6 @@
         setTimeout(reload, 480);
       });
     }
-
     del.addEventListener('click', function (e) {
       e.stopPropagation();
       var goals = getGoals(key);
@@ -301,17 +342,8 @@
       var removed = goals.splice(idx, 1)[0];
       saveGoals(key, goals);
       reload();
-      D.toast('„' + removed.text + '“ gelöscht', {
-        label: 'Rückgängig',
-        fn: function () {
-          var g = getGoals(key);
-          g.splice(Math.min(idx, g.length), 0, removed);
-          saveGoals(key, g);
-          reload();
-        }
-      });
+      D.toast('„' + removed.text + '“ gelöscht', { label: 'Rückgängig', fn: function () { var g = getGoals(key); g.splice(Math.min(idx, g.length), 0, removed); saveGoals(key, g); reload(); } });
     });
-
     makeInlineEdit(text, key, idx, reload);
     wireDragReorder(li, handle, key, idx, reload, listEl);
     return li;
@@ -327,7 +359,6 @@
       sel.addRange(range);
     } catch (e) {}
   }
-
   function makeInlineEdit(textEl, key, idx, reload) {
     textEl.addEventListener('click', function () {
       if (textEl.isContentEditable) return;
@@ -349,9 +380,7 @@
           var goals = getGoals(key);
           if (goals[idx]) { goals[idx].text = next.slice(0, 200); saveGoals(key, goals); }
           reload();
-        } else {
-          textEl.textContent = original;
-        }
+        } else textEl.textContent = original;
       }
       function onKey(e) {
         if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); finish(true); }
@@ -364,9 +393,7 @@
   }
 
   function clearDragIndicators(listEl) {
-    listEl.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(function (n) {
-      n.classList.remove('drag-over-top', 'drag-over-bottom');
-    });
+    listEl.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(function (n) { n.classList.remove('drag-over-top', 'drag-over-bottom'); });
   }
   function moveGoal(key, from, to) {
     if (from === to || from == null || to == null) return false;
@@ -377,11 +404,7 @@
     saveGoals(key, goals);
     return true;
   }
-  function markDropTarget(row, from) {
-    var to = +row.dataset.idx;
-    row.classList.add(from < to ? 'drag-over-bottom' : 'drag-over-top');
-  }
-
+  function markDropTarget(row, from) { row.classList.add(from < +row.dataset.idx ? 'drag-over-bottom' : 'drag-over-top'); }
   function wireDragReorder(li, handle, key, idx, reload, listEl) {
     handle.addEventListener('mousedown', function () { li.draggable = true; });
     handle.addEventListener('mouseup', function () { li.draggable = false; });
@@ -391,22 +414,14 @@
       li.classList.add('dragging');
       try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(idx)); } catch (err) {}
     });
-    li.addEventListener('dragend', function () {
-      li.draggable = false;
-      li.classList.remove('dragging');
-      clearDragIndicators(listEl);
-      dragState = null;
-    });
+    li.addEventListener('dragend', function () { li.draggable = false; li.classList.remove('dragging'); clearDragIndicators(listEl); dragState = null; });
     li.addEventListener('dragover', function (e) {
       if (!dragState || dragState.key !== key) return;
       e.preventDefault();
-      try { e.dataTransfer.dropEffect = 'move'; } catch (err) {}
       clearDragIndicators(listEl);
       if (dragState.from !== idx) markDropTarget(li, dragState.from);
     });
-    li.addEventListener('dragleave', function (e) {
-      if (!li.contains(e.relatedTarget)) li.classList.remove('drag-over-top', 'drag-over-bottom');
-    });
+    li.addEventListener('dragleave', function (e) { if (!li.contains(e.relatedTarget)) li.classList.remove('drag-over-top', 'drag-over-bottom'); });
     li.addEventListener('drop', function (e) {
       if (!dragState || dragState.key !== key) return;
       e.preventDefault();
@@ -415,11 +430,10 @@
       clearDragIndicators(listEl);
       if (moveGoal(key, from, idx)) reload();
     });
-
     handle.addEventListener('touchstart', function (e) {
       if (e.touches.length !== 1) return;
       e.preventDefault();
-      touchDrag = { key: key, from: idx, over: null };
+      touchDrag = { from: idx, over: null };
       li.classList.add('dragging');
     }, { passive: false });
     handle.addEventListener('touchmove', function (e) {
@@ -427,16 +441,12 @@
       e.preventDefault();
       var t = e.touches[0];
       if (t.clientY < 70) window.scrollBy(0, -10);
-      else if (t.clientY > window.innerHeight - 90) window.scrollBy(0, 10);
+      else if (t.clientY > window.innerHeight - 100) window.scrollBy(0, 10);
       var target = document.elementFromPoint(t.clientX, t.clientY);
       var row = target && target.closest ? target.closest('.goal-item') : null;
       clearDragIndicators(listEl);
-      if (row && row.parentNode === listEl && row !== li) {
-        touchDrag.over = +row.dataset.idx;
-        markDropTarget(row, touchDrag.from);
-      } else if (row === li) {
-        touchDrag.over = null;
-      }
+      if (row && row.parentNode === listEl && row !== li) { touchDrag.over = +row.dataset.idx; markDropTarget(row, touchDrag.from); }
+      else if (row === li) touchDrag.over = null;
     }, { passive: false });
     function endTouch(commit) {
       if (!touchDrag) return;
@@ -455,19 +465,13 @@
     var goals = getGoals(tk);
     var pending = goals.filter(function (g) { return !g.done; });
     if (!pending.length) return;
-    var msg = pending.length + ' offene' + (pending.length === 1 ? 's Ziel' : ' Ziele') + ' auf morgen verschieben?';
-    if (!window.confirm(msg)) return;
+    if (!window.confirm(pending.length + ' offene' + (pending.length === 1 ? 's Ziel' : ' Ziele') + ' auf morgen verschieben?')) return;
     var nk = tomorrowKey();
     var tomorrow = getGoals(nk);
     var seen = {};
     tomorrow.forEach(function (g) { seen[g.text] = true; });
     pending.forEach(function (g) {
-      if (!seen[g.text]) {
-        var item = { text: g.text, done: false };
-        if (g.queued) item.queued = true;
-        tomorrow.push(item);
-        seen[g.text] = true;
-      }
+      if (!seen[g.text]) { var item = { text: g.text, done: false }; if (g.queued) item.queued = true; tomorrow.push(item); seen[g.text] = true; }
     });
     saveGoals(nk, tomorrow);
     saveGoals(tk, goals.filter(function (g) { return g.done; }));
@@ -475,7 +479,6 @@
     loadTomorrow();
   }
 
-  /* Add + Polish (Polieren) */
   function makeAddHandlers(input, addBtn, polishBtn, keyFn, statusEl, reload) {
     var timer = null;
     function flash(msg, isError) {
@@ -497,28 +500,24 @@
       if (!t) { input.focus(); return; }
       pushGoal(t);
     });
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); addBtn.click(); }
-    });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); addBtn.click(); } });
     if (!polishBtn) return;
     polishBtn.addEventListener('click', function () {
       var raw = input.value.replace(/\s+/g, ' ').trim();
       if (!raw) { input.focus(); return; }
       if (!D.getSettings().anthropicKey) {
         pushGoal(raw);
-        flash('Polieren braucht einen Anthropic-API-Schlüssel (⚙ Einstellungen) — so übernommen.', false);
+        flash('Polieren braucht einen Anthropic-Schlüssel (⚙ Einstellungen) — so übernommen.', false);
         return;
       }
       polishBtn.disabled = true;
       addBtn.disabled = true;
-      clearTimeout(timer);
       statusEl.classList.remove('is-error');
       statusEl.textContent = 'Wird poliert…';
       var prompt =
         'Clean up exactly ONE to-do goal. Fix spelling and grammar, make it concise and action-oriented ' +
         '(start with a verb when natural), keep the original language and meaning, and do not add new details. ' +
-        'Return ONLY a JSON array containing exactly one string — no preamble, no explanation, no code fences.\n\n' +
-        'Goal: ' + raw;
+        'Return ONLY a JSON array containing exactly one string — no preamble, no explanation, no code fences.\n\nGoal: ' + raw;
       D.callClaude({ model: 'claude-sonnet-5-5', maxTokens: 1000, effort: 'low', messages: [{ role: 'user', content: prompt }] })
         .then(function (res) {
           var txt = res.text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
@@ -527,10 +526,7 @@
           pushGoal(arr[0].replace(/\s+/g, ' ').trim());
           statusEl.textContent = '';
         })
-        .catch(function () {
-          pushGoal(raw);
-          flash('Polieren fehlgeschlagen — so übernommen.', true);
-        })
+        .catch(function () { pushGoal(raw); flash('Polieren fehlgeschlagen — so übernommen.', true); })
         .then(function () { polishBtn.disabled = false; addBtn.disabled = false; });
     });
   }
@@ -549,16 +545,6 @@
       return { items: items, done: done, total: total };
     }
     function glyph(s) { return s === 'done' ? '✓' : (s === 'pending' ? '○' : '·'); }
-    function makeRow(item) {
-      var row = el('div', 'goal-ticker-row');
-      var st = el('span', 'goal-ticker-status', glyph(item.status));
-      st.setAttribute('data-status', item.status);
-      var text = item.text;
-      if (item.status === 'done') text = text.replace(/^✓\s*/, '');
-      row.appendChild(st);
-      row.appendChild(el('span', 'goal-ticker-text', text));
-      return row;
-    }
     function tick(force) {
       var stage = $('goalTickerStage');
       var data = buildItems();
@@ -570,12 +556,14 @@
       var sig = item.status + '|' + item.text;
       if (!force && !first && items.length === 1 && sig === lastSig) return;
       lastSig = sig;
-      var row = makeRow(item);
+      var row = el('div', 'goal-ticker-row');
+      var st = el('span', 'goal-ticker-status', glyph(item.status));
+      st.setAttribute('data-status', item.status);
+      row.appendChild(st);
+      row.appendChild(el('span', 'goal-ticker-text', item.status === 'done' ? item.text.replace(/^✓\s*/, '') : item.text));
       var current = stage.querySelectorAll('.goal-ticker-row:not(.is-leaving)');
-      if (first) {
-        current.forEach(function (c) { c.remove(); });
-        first = false;
-      } else {
+      if (first) { current.forEach(function (c) { c.remove(); }); first = false; }
+      else {
         current.forEach(function (old) {
           old.classList.remove('is-entering');
           old.classList.add('is-leaving');
@@ -586,12 +574,13 @@
       stage.appendChild(row);
     }
     function restart() { clearInterval(timer); timer = setInterval(function () { tick(false); }, 5000); }
-    function start() {
-      tick(true);
-      restart();
-      D.on('goals', function () { cycleIdx = 0; tick(true); restart(); });
-    }
-    return { start: start };
+    return {
+      start: function () {
+        tick(true);
+        restart();
+        D.on('goals', function () { cycleIdx = 0; tick(true); restart(); });
+      }
+    };
   })();
 
   /* ---------------- Compact card on "Heute" ---------------- */
@@ -599,88 +588,52 @@
     var key = todayKey();
     var goals = getGoals(key);
     var done = goals.filter(function (g) { return g.done; }).length;
-    $('miniGoalsNum').innerHTML = done + '<span>/ ' + goals.length + '</span>';
-    var streak = streakCount();
-    $('miniGoalsStreak').textContent = streak > 0 ? '⚡ ' + streak + (streak === 1 ? ' Tag Serie' : ' Tage Serie') : '';
+    $('miniGoalsNum').innerHTML = done + '<small>von ' + goals.length + '</small>';
     var list = $('miniGoalsList');
     list.innerHTML = '';
     var shown = goals.map(function (g, i) { return { g: g, i: i }; })
       .sort(function (a, b) { return (a.g.done - b.g.done) || ((b.g.queued ? 1 : 0) - (a.g.queued ? 1 : 0)) || (a.i - b.i); })
-      .slice(0, 5);
+      .slice(0, 4);
     shown.forEach(function (x) {
-      var li = el('li', x.g.done ? 'done' : '');
+      var li = el('li', 'goal-item' + (x.g.done ? ' done' : ''));
       var c = makeCheck(x.g.done, false, '„' + x.g.text + '“ als erledigt markieren');
-      c.input.addEventListener('change', function () {
-        setDone(key, x.i, c.input.checked);
-        loadToday();
-      });
+      c.input.addEventListener('change', function () { setDone(key, x.i, c.input.checked); loadToday(); });
       li.appendChild(c.wrap);
-      li.appendChild(el('span', 't', (x.g.queued && !x.g.done ? '⚡ ' : '') + x.g.text));
+      li.appendChild(el('span', 'goal-text', (x.g.queued && !x.g.done ? '⚡ ' : '') + x.g.text));
       list.appendChild(li);
     });
     $('miniGoalsEmpty').hidden = goals.length > 0;
     var more = goals.length - shown.length;
-    $('miniGoalsMore').textContent = more > 0 ? '+' + more + ' weitere · Alle Ziele →' : 'Alle Ziele →';
+    $('miniGoalsMore').textContent = more > 0 ? '+' + more + ' weitere' : 'Alle Ziele';
+    var wk = getWeek(thisMonday());
+    var wkDone = wk.filter(function (g) { return g.count >= g.target; }).length;
+    $('miniWeekLine').textContent = wk.length ? 'Wochenziele: ' + wkDone + ' von ' + wk.length + ' geschafft' : 'Noch keine Wochenziele — leg welche unter „Ziele“ an.';
   }
 
-  /* ---------------- Heatmap + stats ---------------- */
-  var selectedDay = null;
-  function cellColor(s) {
-    if (!s || !s.t) return 'rgba(255,255,255,0.04)';
-    var r = s.d / s.t;
-    if (r >= 1) return '#6BE3A4';
-    if (r === 0) return 'rgba(255,107,107,0.30)';
-    return 'rgba(107,227,164,' + (0.18 + r * 0.45).toFixed(2) + ')';
-  }
-  function renderHistory() {
-    var wrap = $('goalHeatmap');
+  /* ---------------- Weekly review ---------------- */
+  function renderReview() {
+    var wrap = $('reviewList');
     if (!wrap) return;
-    var today = D.activeDate();
-    var weeks = window.innerWidth >= 720 ? 26 : 16;
-    var start = D.shift(D.mondayOf(today), -7 * (weeks - 1));
-    var days = D.dateRange(start, D.shift(D.mondayOf(today), 6));
     wrap.innerHTML = '';
-    days.forEach(function (d) {
-      var s = d <= today ? daySummary(d) : null;
-      var c = el('button', 'hm-cell');
-      c.type = 'button';
-      c.style.background = cellColor(s);
-      if (d > today) { c.classList.add('is-future'); c.disabled = true; }
-      if (d === today) c.classList.add('is-today');
-      if (d === selectedDay) c.classList.add('is-selected');
-      c.title = D.fmtDay(d) + (s ? ' · ' + s.d + '/' + s.t + ' erledigt' : ' · keine Ziele');
-      c.setAttribute('aria-label', c.title);
-      c.addEventListener('click', function () { selectedDay = selectedDay === d ? null : d; renderHistory(); });
-      wrap.appendChild(c);
-    });
-    var wrapEl = wrap.parentNode;
-    if (!wrapEl._scrolled) { wrapEl.scrollLeft = wrapEl.scrollWidth; wrapEl._scrolled = true; }
-
-    // Stats
-    var last30 = D.dateRange(D.shift(today, -29), today);
-    var tot = 0, dn = 0, daysWith = 0, perfect = 0;
-    last30.forEach(function (d) {
-      var s = daySummary(d);
-      if (s && s.t) { tot += s.t; dn += s.d; daysWith++; if (s.d === s.t) perfect++; }
-    });
-    $('ghRate').innerHTML = tot ? Math.round(dn / tot * 100) + '<small>%</small>' : '—';
-    $('ghPerfect').innerHTML = perfect + '<small>/ ' + daysWith + '</small>';
-    $('ghStreak').textContent = streakCount();
-    $('ghBest').textContent = Math.max(longestStreak(), streakCount());
-
-    var det = $('goalDayDetail');
-    if (selectedDay) {
-      var s = daySummary(selectedDay);
-      det.hidden = false;
-      det.innerHTML = '';
-      det.appendChild(el('strong', null, D.fmtDayLong(selectedDay)));
-      if (!s) { det.appendChild(el('div', 'muted small', 'An diesem Tag waren keine Ziele eingetragen.')); return; }
-      det.appendChild(el('span', 'muted', ' · ' + s.d + ' von ' + s.t + ' erledigt'));
-      var ul = el('ul');
-      (s.g || []).forEach(function (g) { ul.appendChild(el('li', g[1] ? 'done' : '', g[0])); });
-      det.appendChild(ul);
-    } else {
-      det.hidden = true;
+    var monday = thisMonday();
+    for (var w = 0; w < 6; w++) {
+      var mon = D.shift(monday, -7 * w);
+      var days = D.weekDays(mon).filter(function (d) { return d <= D.activeDate(); });
+      var t = 0, dn = 0;
+      days.forEach(function (d) { var s = daySummary(d); if (s) { t += s.t; dn += s.d; } });
+      var wk = getWeek(mon);
+      var wkDone = wk.filter(function (g) { return g.count >= g.target; }).length;
+      var row = el('div', 'review-row');
+      var k = el('div', 'k', w === 0 ? 'Diese Woche' : 'KW ' + D.isoWeek(mon));
+      k.appendChild(el('small', null, D.fmtDayMonth(mon) + ' – ' + D.fmtDayMonth(D.shift(mon, 6))));
+      row.appendChild(k);
+      var tr = el('div', 'track');
+      var f = el('div', 'track-fill');
+      f.style.width = (t ? Math.round(dn / t * 100) : 0) + '%';
+      tr.appendChild(f);
+      row.appendChild(tr);
+      row.appendChild(el('div', 'v', (t ? dn + '/' + t + ' Tagesziele' : 'keine Tagesziele') + (wk.length ? ' · ' + wkDone + '/' + wk.length + ' Woche' : '')));
+      wrap.appendChild(row);
     }
   }
 
@@ -693,58 +646,69 @@
       makeAddHandlers($('tomorrowInput'), $('tomorrowAddBtn'), $('tomorrowPolishBtn'), tomorrowKey, $('tomorrowStatus'), loadTomorrow);
       makeAddHandlers($('miniGoalInput'), $('miniGoalAddBtn'), null, todayKey, $('miniGoalStatus'), loadToday);
       $('gmPushBtn').addEventListener('click', pushRemaining);
+      $('wgAddBtn').addEventListener('click', addWeekly);
+      $('wgInput').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); addWeekly(); } });
+      $('wgCopyBtn').addEventListener('click', function () {
+        var monday = thisMonday();
+        var prev = getWeek(D.shift(monday, -7));
+        saveWeek(monday, prev.map(function (g) { return { id: D.uid('w'), text: g.text, target: g.target, count: 0 }; }));
+        renderWeekly();
+      });
       loadToday();
       loadTomorrow();
-      renderStreak();
-      renderMini();
+      renderWeekly();
+      renderReview();
       Ticker.start();
-      D.on('goals', function () { renderMini(); renderHistory(); });
+      D.on('goals', function () { renderMini(); renderReview(); });
     },
-    renderHistory: renderHistory,
-    renderAll: function () { loadToday(); loadTomorrow(); renderStreak(); renderMini(); renderHistory(); },
+    render: function () { loadToday(); loadTomorrow(); renderWeekly(); renderReview(); },
     dayChanged: function () {
       runStreakCheck();
       runRollover();
-      D.bump();
-      loadToday();
-      loadTomorrow();
-      renderStreak();
-      renderMini();
-      renderHistory();
+      D.Goals.render();
+    },
+    weekSummary: function (monday) {
+      var days = D.weekDays(monday);
+      var t = 0, dn = 0;
+      days.forEach(function (d) { var s = daySummary(d); if (s) { t += s.t; dn += s.d; } });
+      return { total: t, done: dn };
     },
     seedDemo: function () {
-      if (!D.DEMO || D.storeGet('demo_seeded_goals')) return;
-      var texts = ['30 Min lesen', 'Workout', 'Ernährungsplan', 'E-Mails beantworten', 'Spaziergang', 'Bachelorarbeit 2 Std', 'Wasser 2 L', 'Meditieren', 'Zimmer aufräumen'];
+      if (!D.DEMO || D.storeGet('demo_seeded_goals2')) return;
+      var texts = ['30 Min lesen', 'Workout', 'Vorlesung nacharbeiten', 'E-Mails beantworten', 'Spaziergang', 'Bachelorarbeit 2 Std', 'Wasser 2 L', 'Zimmer aufräumen'];
       var h = {};
       var today = D.activeDate();
       var seed = 7;
       function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
-      for (var i = 150; i >= 1; i--) {
+      for (var i = 60; i >= 1; i--) {
         var d = D.shift(today, -i);
-        if (rnd() < 0.12) continue;
+        if (rnd() < 0.15) continue;
         var t = 2 + Math.floor(rnd() * 4);
-        var skill = 0.55 + (150 - i) / 150 * 0.35;
         var g = [];
-        for (var j = 0; j < t; j++) g.push([texts[Math.floor(rnd() * texts.length)], rnd() < skill ? 1 : 0]);
+        for (var j = 0; j < t; j++) g.push([texts[Math.floor(rnd() * texts.length)], rnd() < 0.72 ? 1 : 0]);
         h[d] = { t: t, d: g.filter(function (x) { return x[1]; }).length, g: g };
       }
       D.storeSet(HISTORY_KEY, h);
-      var streak = 0;
-      for (var k = 1; k < 150; k++) {
-        var s = h[D.shift(today, -k)];
-        if (!s) continue;
-        if (s.d === s.t) streak++; else break;
-      }
-      D.storeSet(STREAK_KEY, { count: streak, lastProcessedDate: D.shift(today, -1) });
+      D.storeSet(STREAK_KEY, { count: 2, lastProcessedDate: D.shift(today, -1) });
       saveGoals(PREFIX + today, [
-        { text: 'Bachelorarbeit: Kapitel 3 überarbeiten', done: true, doneAt: Date.now() },
-        { text: 'Workout – Beine', done: false, queued: true },
+        { text: 'Statistik-Übungsblatt 4 abgeben', done: true, doneAt: Date.now() },
+        { text: 'Vorlesung BWL nacharbeiten', done: false, queued: true },
         { text: '30 Min lesen', done: false },
         { text: 'Mama anrufen', done: true, doneAt: Date.now() }
       ]);
       saveGoals(PREFIX + D.tomorrowDate(), [{ text: 'Morgens laufen gehen', done: false }]);
-      D.storeSet('demo_seeded_goals', true);
-      D.bump();
+      var mon = thisMonday();
+      saveWeek(mon, [
+        { id: 'w1', text: 'Lernen für Mathe', target: 4, count: 2 },
+        { id: 'w2', text: 'Wäsche waschen', target: 1, count: 1 },
+        { id: 'w3', text: '2 Kapitel Bachelorarbeit', target: 2, count: 0 }
+      ]);
+      saveWeek(D.shift(mon, -7), [
+        { id: 'w4', text: 'Lernen für Mathe', target: 4, count: 4 },
+        { id: 'w5', text: 'Einkaufen', target: 1, count: 1 },
+        { id: 'w6', text: '2 Kapitel Bachelorarbeit', target: 2, count: 1 }
+      ]);
+      D.storeSet('demo_seeded_goals2', true);
     }
   };
 })();

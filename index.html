@@ -3,38 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#050506">
+<meta name="theme-color" content="#F3F0EC">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Dashboard">
-<meta name="color-scheme" content="dark">
-<meta name="description" content="Dein persönliches Dashboard: Amazfit-Daten, Ziele, Verlauf, Experimente und Fortschrittsfotos.">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Dein persönliches Dashboard: Tagesform, Ziele, Gym, Uni und Verlauf.">
 <title>Mein Dashboard</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050506'/%3E%3Ccircle cx='32' cy='32' r='19' fill='none' stroke='%23ffffff' stroke-opacity='.12' stroke-width='6'/%3E%3Cpath d='M32 13a19 19 0 0 1 18 25' fill='none' stroke='%23FF9559' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="apple-touch-icon" href="icons/icon-180.png?v=10">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23F3F0EC'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%231C1B1A' stroke-opacity='.12' stroke-width='6'/%3E%3Cpath d='M32 14a18 18 0 1 1-17.3 23' fill='none' stroke='%231C1B1A' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css?v=10">
 </head>
 <body>
 <div class="app">
 
-  <!-- ============ Sidebar (desktop) ============ -->
+  <!-- ============ Sidebar (Desktop) ============ -->
   <aside class="sidebar" aria-label="Bereiche">
-    <div class="brand">DU<span>.</span></div>
-    <p class="nav-label">DEIN BEREICH</p>
+    <div class="brand"><span class="brand-dot"></span>Dashboard</div>
     <nav aria-label="Bereiche">
       <button type="button" class="side-link" data-nav="heute" data-icon="home">Heute</button>
-      <button type="button" class="side-link" data-nav="verlauf" data-icon="chart">Verlauf</button>
       <button type="button" class="side-link" data-nav="ziele" data-icon="check">Ziele</button>
-      <button type="button" class="side-link" data-nav="experimente" data-icon="flask">Experimente</button>
-      <button type="button" class="side-link" data-nav="fotos" data-icon="image">Fotos</button>
+      <button type="button" class="side-link" data-nav="gym" data-icon="gym">Gym</button>
+      <button type="button" class="side-link" data-nav="uni" data-icon="book">Uni</button>
+      <button type="button" class="side-link" data-nav="verlauf" data-icon="chart">Verlauf</button>
     </nav>
-    <div class="side-index" role="button" tabindex="0" onclick="Dash.go('verlauf', {metric: 'index'})" onkeydown="if(event.key==='Enter')Dash.go('verlauf', {metric: 'index'})">
-      <div class="side-index-label">Körper-Index</div>
-      <div class="side-index-num" id="sideIndexNum">—</div>
-      <div class="side-index-sub" id="sideIndexSub">100 = deine Basis</div>
-    </div>
     <div class="side-bottom">
       <button type="button" class="side-link" data-open-ask data-icon="sparkle">Frag Claude</button>
       <button type="button" class="side-link" data-open-settings data-icon="gear">Einstellungen</button>
@@ -43,9 +37,13 @@
 
   <div class="main">
     <header class="topbar">
-      <div>
+      <div class="topbar-text">
         <div class="greet" id="greet">&nbsp;</div>
         <h1 class="dash-title" id="pageTitle">Mein Dashboard</h1>
+        <div class="daybar" id="daybar">
+          <div class="daybar-text" id="daybarText"></div>
+          <div class="track"><div class="track-fill aura-fill" id="daybarFill" style="width:0%"></div></div>
+        </div>
       </div>
       <div class="top-actions">
         <button type="button" class="icon-btn mobile-only" data-open-ask aria-label="Frag Claude" title="Frag Claude" data-icon="sparkle"></button>
@@ -53,308 +51,413 @@
       </div>
     </header>
 
-    <div class="demo-banner" id="demoBanner" hidden>Demo-Modus · Beispieldaten, getrennt von deinen echten Daten · <a href="./">Zur echten Ansicht</a></div>
+    <div class="demo-banner" id="demoBanner" hidden>Demo-Modus mit Beispieldaten — getrennt von deinen echten Daten · <a href="./">Zur echten Ansicht</a></div>
 
     <!-- ============ HEUTE ============ -->
     <section class="view" id="view-heute" aria-label="Heute">
-      <div class="ticker-row">
-        <div class="goal-ticker" id="goalTicker" aria-live="polite" aria-atomic="true" title="Zu den Zielen">
-          <div class="goal-ticker-led"><span class="goal-ticker-led-dot"></span></div>
-          <div class="goal-ticker-label">ZIELE</div>
-          <div class="goal-ticker-stage" id="goalTickerStage">
-            <div class="goal-ticker-row"><span class="goal-ticker-status">—</span><span class="goal-ticker-text">Lädt…</span></div>
-          </div>
-          <div class="goal-ticker-meta" id="goalTickerMeta">0/0</div>
-        </div>
+      <div class="goal-ticker" id="goalTicker" aria-live="polite" aria-atomic="true" title="Zu den Zielen">
+        <span class="goal-ticker-led-dot"></span>
+        <span class="goal-ticker-label">Ziele</span>
+        <div class="goal-ticker-stage" id="goalTickerStage"><div class="goal-ticker-row"><span class="goal-ticker-text">Lädt…</span></div></div>
+        <span class="goal-ticker-meta" id="goalTickerMeta">0/0</span>
       </div>
 
       <div class="today-grid">
         <div class="today-col">
-          <div class="card day-card">
-            <div class="day-ring-wrap">
-              <div class="day-ring" id="dayRing" role="img" aria-label="Tagesfortschritt">
-                <svg viewBox="0 0 120 120" aria-hidden="true">
-                  <defs>
-                    <filter id="ringGlow" x="-30%" y="-30%" width="160%" height="160%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="2.4" result="blur"/>
-                      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                    </filter>
-                  </defs>
-                  <circle class="ring-track" cx="60" cy="60" r="52"/>
-                  <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52" transform="rotate(-90 60 60)" filter="url(#ringGlow)"/>
-                </svg>
-                <div class="ring-center">
-                  <div class="ring-pct" id="ringPct">—</div>
-                  <div class="ring-phase" id="ringPhase">—</div>
-                  <div class="ring-clock" id="ringClock">—</div>
+          <div class="focus">
+            <div class="aura" aria-hidden="true"></div>
+            <div class="card" id="formCard">
+              <div class="card-head">
+                <h2 class="card-title">Tagesform</h2>
+                <div class="btn-row" style="align-items:center;gap:4px">
+                  <span class="status-line" id="bodyStatus"></span>
+                  <button type="button" class="icon-btn flat" id="bodyRefreshBtn" title="Aktualisieren" aria-label="Uhr-Daten aktualisieren" data-icon="refresh"></button>
+                  <button type="button" class="btn btn-light btn-sm" id="bodySyncBtn" title="Intervals.icu öffnen, damit es frische Zepp-Daten holt">Sync</button>
                 </div>
               </div>
-              <div class="day-info">
-                <div class="day-status" id="dayStatus">—</div>
-                <div class="day-remaining" id="dayRemaining">—</div>
-                <div class="day-hours" id="dayHours">—</div>
+              <p class="body-error" id="bodyError" hidden></p>
+
+              <div id="bodyOnboard" hidden>
+                <p class="lead" style="margin-bottom:14px">Verbinde deine Amazfit, dann siehst du hier jeden Morgen, wie erholt du bist.</p>
+                <ol class="onboard-steps">
+                  <li>Zepp-App → Profil → Drittanbieter-Konten → Intervals.icu (Wellness-Import anhaken).</li>
+                  <li>intervals.icu → Einstellungen → Entwicklereinstellungen → API-Schlüssel erstellen.</li>
+                  <li>Hier tippen und den Schlüssel einfügen.</li>
+                </ol>
+                <button type="button" class="btn btn-dark btn-block" id="bodyOnboardBtn">API-Schlüssel hinzufügen</button>
+                <p class="hint">Nur mal schauen? <a href="?demo=1">Demo mit Beispieldaten öffnen</a></p>
+              </div>
+
+              <div id="formContent" hidden>
+                <div class="form-status">
+                  <div class="form-emoji" id="formEmoji" aria-hidden="true">·</div>
+                  <div class="form-word" id="formWord">—</div>
+                </div>
+                <p class="form-text" id="formText"></p>
+                <div class="metric-rows" id="formRows"></div>
+                <details class="explain">
+                  <summary>Wie wird das berechnet?</summary>
+                  <p>Das Dashboard vergleicht deinen Schlaf, deine HRV und deinen Ruhepuls von letzter Nacht mit <b>deinem eigenen Durchschnitt der letzten 30 Tage</b> — nicht mit anderen Menschen.</p>
+                  <p><b>Gut erholt</b> heißt: mehr Schlaf, höhere HRV und/oder niedrigerer Ruhepuls als sonst. <b>Eher müde</b> heißt das Gegenteil. Kleine Abweichungen zählen als „wie sonst“.</p>
+                  <p>„von Di“ bedeutet: Zepp hat den Wert unter dem Vortag gespeichert.</p>
+                </details>
               </div>
             </div>
           </div>
 
-          <div class="card index-card" id="indexCard" role="button" tabindex="0" aria-label="Körper-Index — Verlauf öffnen">
-            <div class="card-title"><span>Körper-Index</span><span class="badge" id="indexBadge" hidden>Basis vorläufig</span></div>
-            <div class="index-top">
-              <div>
-                <div class="index-num is-empty" id="indexNum">—</div>
-                <div class="index-delta" id="indexDelta"></div>
-              </div>
-              <div class="index-spark" id="indexSpark"></div>
+          <div class="grid-tiles" id="bodyTiles" hidden>
+            <button type="button" class="tile" id="stepsTile" aria-label="Schritte — Verlauf öffnen">
+              <div class="tile-label"><span>Schritte heute</span></div>
+              <div class="tile-value" id="stepsValue">—</div>
+              <div class="tile-sub" id="stepsSub">&nbsp;</div>
+              <div class="track"><div class="track-fill" id="stepsFill" style="width:0%"></div></div>
+            </button>
+            <div class="tile">
+              <div class="tile-label"><span>Gewicht</span><button type="button" class="link-btn" id="measureOpenBtn" style="min-height:24px;font-size:13px">Eintragen</button></div>
+              <div class="tile-value" id="weightValue">—</div>
+              <div class="tile-sub" id="weightSub">&nbsp;</div>
             </div>
-            <div class="index-parts" id="indexParts"></div>
-            <div class="index-sub" id="indexSub"></div>
           </div>
 
           <div class="card" id="miniGoalsCard">
-            <div class="card-title"><span>Ziele heute</span><span class="aside" id="miniGoalsStreak"></span></div>
-            <div class="goals-mini-top">
-              <div class="goals-mini-num" id="miniGoalsNum">0<span>/ 0</span></div>
-              <button type="button" class="link-btn" id="miniGoalsMore">Alle Ziele →</button>
+            <div class="card-head">
+              <h2 class="card-title">Ziele heute</h2>
+              <button type="button" class="link-btn" id="miniGoalsMore">Alle Ziele</button>
             </div>
-            <ul class="goals-mini-list" id="miniGoalsList"></ul>
+            <div class="big" id="miniGoalsNum" style="margin-bottom:12px">0<small>von 0</small></div>
+            <ul class="goal-list" id="miniGoalsList"></ul>
             <div class="empty-state" id="miniGoalsEmpty">Noch keine Ziele für heute.</div>
-            <div class="goal-input-wrap" style="margin-top:6px">
-              <input type="text" id="miniGoalInput" class="text-input" placeholder="Schnell ein Ziel hinzufügen…" autocomplete="off" enterkeyhint="done" maxlength="200">
-              <button type="button" class="btn-primary btn-small" id="miniGoalAddBtn">+ Hinzufügen</button>
+            <div class="add-row">
+              <input type="text" id="miniGoalInput" class="input" placeholder="Neues Ziel für heute…" autocomplete="off" enterkeyhint="done" maxlength="200">
+              <button type="button" class="btn btn-dark" id="miniGoalAddBtn">Hinzufügen</button>
             </div>
             <div class="gm-status" id="miniGoalStatus" aria-live="polite"></div>
-          </div>
-
-          <div class="card" id="checkinCard">
-            <div class="card-title"><span>Wie geht's dir?</span><span class="aside" id="checkinDate"></span></div>
-            <div class="checkin-row"><span class="checkin-label">Stimmung</span><div class="scale" id="scale-mood"></div></div>
-            <div class="checkin-row"><span class="checkin-label">Energie</span><div class="scale" id="scale-energy"></div>
-              <div class="scale-caption"><span>leer</span><span>voller Akku</span></div></div>
-            <div class="checkin-row"><span class="checkin-label">Stress</span><div class="scale" id="scale-stress"></div>
-              <div class="scale-caption"><span>entspannt</span><span>sehr gestresst</span></div></div>
-            <div class="checkin-note"><input type="text" class="text-input" id="checkinNote" placeholder="Notiz zum Tag (optional)…" maxlength="500" autocomplete="off"></div>
-            <div class="checkin-foot">
-              <span class="saved-note" id="checkinSaved" aria-live="polite"></span>
-              <button type="button" class="btn-secondary btn-small" id="measureOpenBtn">⊕ Gewicht eintragen</button>
-            </div>
+            <p class="hint" id="miniWeekLine" style="margin-top:4px"></p>
           </div>
         </div>
 
         <div class="today-col">
-          <div id="bodySection">
-            <div class="body-head">
-              <div class="section-title">Körper</div>
-              <div class="body-controls">
-                <span class="body-updated" id="bodyUpdated"></span>
-                <button type="button" class="icon-btn plain" id="bodyRefreshBtn" title="Aktualisieren" aria-label="Körperdaten aktualisieren" data-icon="refresh"></button>
-                <button type="button" class="pill-btn" id="bodySyncBtn" title="Intervals.icu öffnen, damit es frische Zepp-Daten holt"><span>Sync</span></button>
-              </div>
+          <div class="card" id="miniGymCard">
+            <div class="card-head">
+              <h2 class="card-title">Gym diese Woche</h2>
+              <button type="button" class="link-btn" id="miniGymMore">Verlauf</button>
             </div>
-            <p class="body-error" id="bodyError" hidden></p>
-            <p class="body-hint" id="bodyHint" hidden>Schlaf von Zepp fehlt? Tippe auf Sync — Intervals.icu holt frische Zepp-Daten, sobald es geöffnet wird.</p>
-
-            <div class="card onboard-card" id="bodyOnboard" hidden>
-              <h3 class="onboard-title">Verbinde deine Amazfit</h3>
-              <ol class="onboard-steps">
-                <li>1. Zepp-App → Profil → Drittanbieter-Konten → Intervals.icu (Wellness-Import anhaken).</li>
-                <li>2. intervals.icu → Einstellungen → Entwicklereinstellungen → API-Schlüssel erstellen.</li>
-                <li>3. Tippe unten und füge den Schlüssel ein.</li>
-              </ol>
-              <button type="button" class="btn-primary" id="bodyOnboardBtn">API-Schlüssel hinzufügen</button>
-              <p class="sheet-note" style="margin-top:14px">Nur mal schauen? <a href="?demo=1">Demo mit Beispieldaten öffnen</a></p>
-            </div>
-
-            <div id="bodyContent" hidden>
-              <div class="card body-message" id="bodyNoData" hidden>Noch keine Zepp-Daten. Prüf in den Intervals.icu-Einstellungen, ob bei Amazfit/Zepp der Wellness-Import angehakt ist, und tippe dann auf Sync.</div>
-              <div class="body-grid" id="bodyGrid"></div>
-            </div>
+            <div class="big" id="miniGymNum">0<small>von 3</small></div>
+            <p class="hint" id="miniGymText" style="margin-top:4px"></p>
+            <div class="week-dots" id="miniGymDots"></div>
+            <button type="button" class="btn btn-dark btn-block" id="miniGymBtn" style="margin-top:10px">Ich war heute im Gym</button>
           </div>
 
-          <div class="card" id="trainingCard">
-            <div class="card-title"><span>Training &amp; Schlaf</span></div>
-            <div class="train-stats">
-              <div><div class="mini-label">Fitness</div><div class="train-num" id="trFitness">—</div></div>
-              <div><div class="mini-label">Ermüdung</div><div class="train-num" id="trFatigue">—</div></div>
-              <div><div class="mini-label">Form</div><div class="train-num" id="trForm">—</div></div>
-              <div><div class="mini-label">Last heute</div><div class="train-num" id="trLoad">0</div></div>
+          <div class="card" id="miniUniCard">
+            <div class="card-head">
+              <h2 class="card-title">Uni</h2>
+              <button type="button" class="link-btn" id="miniUniMore">Alles ansehen</button>
             </div>
-            <div class="train-cols">
-              <div>
-                <div class="mini-head"><span class="mini-label">Schlaf · 7 Tage</span><span class="mini-caption" id="sleepCaption"></span></div>
-                <div class="sleep-strip" id="sleepStrip"></div>
-              </div>
-              <div>
-                <div class="mini-head"><span class="mini-label">Letzte Workouts</span></div>
-                <ul class="workouts" id="workoutList"></ul>
+            <div id="miniExamBox" hidden>
+              <div class="exam-hero">
+                <div style="min-width:0">
+                  <div class="eyebrow">Nächster Termin</div>
+                  <div class="exam-title" id="miniExamTitle"></div>
+                  <div class="exam-meta" id="miniExamMeta"></div>
+                </div>
+                <div class="exam-days" id="miniExamDays" style="font-size:40px;text-align:right"></div>
               </div>
             </div>
+            <div id="miniExamEmpty" hidden>
+              <p class="lead">Noch keine Klausuren oder Abgaben eingetragen.</p>
+              <button type="button" class="btn btn-light btn-sm" data-add-exam style="margin-top:10px">+ Termin eintragen</button>
+            </div>
+            <hr class="divider">
+            <div class="eyebrow">Lernzeit</div>
+            <div style="font-size:15px;margin:4px 0 8px" id="miniStudyLine"></div>
+            <div class="track" id="miniStudyTrack"><div class="track-fill aura-fill" id="miniStudyFill" style="width:0%"></div></div>
+            <div class="timer-box" id="miniStudyTimerBox" hidden style="margin-top:14px">
+              <div><div class="timer-time"><span class="rec-dot"></span><span id="miniStudyTimerTime">0:00</span></div><div class="timer-sub" id="miniStudyTimerSub"></div></div>
+            </div>
+            <div style="margin-top:14px"><input type="text" id="miniStudySubject" class="input" placeholder="Fach (optional), z. B. Mathe 2" list="subjectList" autocomplete="off" maxlength="60"></div>
+            <button type="button" class="btn btn-dark btn-block" id="miniStudyTimerBtn" style="margin-top:10px">Lernen starten</button>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- ============ VERLAUF ============ -->
-    <section class="view" id="view-verlauf" aria-label="Verlauf" hidden>
-      <div class="chips" id="historyChips" role="group" aria-label="Wert auswählen"></div>
-      <div class="card">
-        <div class="history-head">
-          <div>
-            <div class="readout-label" id="readoutLabel">—</div>
-            <div class="readout-value" id="readoutValue">—</div>
-            <div class="readout-date" id="readoutDate">&nbsp;</div>
-          </div>
-          <div class="segmented" id="historyRanges" role="group" aria-label="Zeitraum"></div>
-        </div>
-        <div id="historyChart"></div>
-        <div class="legend" id="historyLegend"></div>
-      </div>
-      <div class="stats-grid" id="historyStats"></div>
-
-      <div class="card" style="margin-top:12px">
-        <div class="card-title"><span>Wochenrückblick</span><span class="aside">Durchschnitt je Kalenderwoche</span></div>
-        <div class="table-wrap">
-          <table class="data-table"><thead id="weeklyHead"></thead><tbody id="weeklyBody"></tbody></table>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:12px">
-        <div class="card-title"><span>Hinter der Grafik</span><span class="aside" id="dataCount"></span></div>
-        <div class="table-wrap">
-          <table class="data-table"><thead id="dataHead"></thead><tbody id="dataBody"></tbody></table>
-        </div>
-        <div class="more-row"><button type="button" class="text-btn" id="dataMore" hidden>Mehr anzeigen</button></div>
-        <p class="field-hint" id="historyNote"></p>
       </div>
     </section>
 
     <!-- ============ ZIELE ============ -->
     <section class="view" id="view-ziele" aria-label="Ziele" hidden>
-      <div class="goals-grid">
-        <div>
-          <div class="card gm-card" id="gmTodayCard">
-            <div class="gm-head">
-              <div>
-                <div class="gm-eyebrow" id="todayLabel">Heute</div>
-                <div class="gm-progress-row">
-                  <span class="gm-progress-num" id="gmProgressNum">0</span>
-                  <span class="gm-progress-total" id="gmProgressTotal">/ 0</span>
-                  <span class="gm-progress-label" id="gmProgressLabel">noch keine Ziele</span>
+      <div class="grid-2">
+        <div class="stack">
+          <div class="focus">
+            <div class="aura" aria-hidden="true"></div>
+            <div class="card" id="wgCard">
+              <div class="card-head">
+                <div>
+                  <h2 class="card-title">Wochenziele</h2>
+                  <div class="card-sub" id="wgTitle"></div>
                 </div>
+                <span class="badge" id="wgProgress"></span>
               </div>
-              <div class="gm-streak" id="gmStreak" title="Tage in Folge, an denen alle Ziele erledigt waren">
-                <span class="gm-streak-bolt" aria-hidden="true">⚡</span>
-                <span class="gm-streak-num" id="gmStreakNum">0</span>
-                <span class="gm-streak-label" id="gmStreakLabel">Tage Serie</span>
+              <ul class="goal-list" id="wgList"></ul>
+              <p class="empty-state" id="wgEmpty">Was willst du diese Woche schaffen? Z. B. „Lernen für Mathe 4×“ oder „Wäsche waschen“.</p>
+              <button type="button" class="btn btn-light btn-sm" id="wgCopyBtn" hidden style="margin-top:6px">Ziele von letzter Woche übernehmen</button>
+              <div class="add-row">
+                <input type="text" id="wgInput" class="input" placeholder="Neues Wochenziel…" autocomplete="off" enterkeyhint="done" maxlength="120">
+                <select id="wgTarget" class="select" aria-label="Wie oft pro Woche">
+                  <option value="1">1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option><option value="5">5×</option><option value="6">6×</option><option value="7">7×</option>
+                </select>
+                <button type="button" class="btn btn-dark" id="wgAddBtn">Hinzufügen</button>
               </div>
             </div>
-            <div class="gm-bar" id="gmBar"></div>
+          </div>
+
+          <div class="card" id="gmTodayCard">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Heute</h2>
+                <div class="card-sub" id="todayLabel"></div>
+              </div>
+              <span class="streak-badge" id="gmStreak">⚡ 0 Tage in Folge</span>
+            </div>
+            <div class="goal-head-row">
+              <div class="big"><span id="gmProgressNum">0</span><small>von <span id="gmProgressTotal">0</span></small></div>
+            </div>
+            <div class="card-sub" id="gmProgressLabel"></div>
+            <div class="seg-bar" id="gmBar"></div>
             <ul id="goalList" class="goal-list"></ul>
             <div id="emptyState" class="empty-state">Noch keine Ziele für heute — füg unten eins hinzu.</div>
             <button type="button" class="gm-push-btn" id="gmPushBtn" hidden>→ Offene auf morgen verschieben</button>
-            <div class="goal-input-wrap">
-              <input type="text" id="goalInput" class="text-input" placeholder="Ziel für heute hinzufügen…" autocomplete="off" enterkeyhint="done" maxlength="200">
-              <button type="button" class="btn-primary" id="goalAddBtn">+ Hinzufügen</button>
-              <button type="button" class="btn-secondary" id="goalPolishBtn" title="Mit Claude sprachlich aufräumen">✨ Polieren</button>
+            <div class="add-row">
+              <input type="text" id="goalInput" class="input" placeholder="Neues Ziel für heute…" autocomplete="off" enterkeyhint="done" maxlength="200">
+              <button type="button" class="btn btn-dark" id="goalAddBtn">Hinzufügen</button>
+              <button type="button" class="btn btn-light" id="goalPolishBtn" title="Mit Claude sprachlich aufräumen" aria-label="Mit Claude polieren">✨</button>
             </div>
             <div class="gm-status" id="polishStatus" aria-live="polite"></div>
           </div>
+        </div>
 
-          <div class="card gm-card gm-card-tomorrow" id="gmTomorrowCard">
-            <div class="gm-head">
+        <div class="stack">
+          <div class="card" id="gmTomorrowCard">
+            <div class="card-head">
               <div>
-                <div class="gm-eyebrow" id="tomorrowLabel">Morgen planen</div>
-                <div class="gm-sub">Heute Abend schreiben, ab 6 Uhr aktiv.</div>
+                <h2 class="card-title" id="tomorrowLabel">Morgen</h2>
+                <div class="card-sub">Heute Abend planen — ab 6 Uhr wird’s dein Tagesziel.</div>
               </div>
-              <div class="gm-count" id="gmTomorrowCount">0 geplant</div>
+              <span class="badge" id="gmTomorrowCount"></span>
             </div>
             <ul id="tomorrowList" class="goal-list"></ul>
-            <div id="tomorrowEmpty" class="empty-state">Für morgen ist noch nichts geplant</div>
-            <div class="goal-input-wrap">
-              <input type="text" id="tomorrowInput" class="text-input" placeholder="Ziel für morgen planen…" autocomplete="off" enterkeyhint="done" maxlength="200">
-              <button type="button" class="btn-primary" id="tomorrowAddBtn">+ Hinzufügen</button>
-              <button type="button" class="btn-secondary" id="tomorrowPolishBtn" title="Mit Claude sprachlich aufräumen">✨ Polieren</button>
+            <div id="tomorrowEmpty" class="empty-state">Für morgen ist noch nichts geplant.</div>
+            <div class="add-row">
+              <input type="text" id="tomorrowInput" class="input" placeholder="Ziel für morgen…" autocomplete="off" enterkeyhint="done" maxlength="200">
+              <button type="button" class="btn btn-dark" id="tomorrowAddBtn">Hinzufügen</button>
+              <button type="button" class="btn btn-light" id="tomorrowPolishBtn" title="Mit Claude sprachlich aufräumen" aria-label="Mit Claude polieren">✨</button>
             </div>
             <div class="gm-status" id="tomorrowStatus" aria-live="polite"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2 class="card-title">Rückblick</h2><span class="card-sub">letzte 6 Wochen</span></div>
+            <div id="reviewList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ GYM ============ -->
+    <section class="view" id="view-gym" aria-label="Gym" hidden>
+      <div class="stack">
+        <div class="focus">
+          <div class="aura" aria-hidden="true"></div>
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Diese Woche</h2>
+                <div class="card-sub" id="gymWeekLabel"></div>
+              </div>
+            </div>
+            <div class="big" id="gymNum">0<small>von 3 Mal</small></div>
+            <p class="hint" id="gymStatus" style="margin-top:4px"></p>
+            <div id="gymDots"></div>
+            <p class="hint" style="margin-top:4px">Tippe auf einen Tag, um ihn ab- oder anzuhaken. ⌚ = von deiner Uhr erkannt.</p>
+            <button type="button" class="btn btn-dark btn-block" id="gymTodayBtn" style="margin-top:12px">Ich war heute im Gym</button>
+            <hr class="divider">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <div><div class="eyebrow">Wochenziel</div><div style="font-weight:600" id="gymGoalVal">3× pro Woche</div></div>
+              <div class="stepper">
+                <button type="button" class="icon-btn" id="gymGoalMinus" aria-label="Ziel verringern">−</button>
+                <button type="button" class="icon-btn dark" id="gymGoalPlus" aria-label="Ziel erhöhen">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-tiles" style="margin-top:0">
+          <div class="tile"><div class="tile-label">Wochen in Folge</div><div class="tile-value" id="gymStreak">0</div><div class="tile-sub">Ziel erreicht</div></div>
+          <div class="tile"><div class="tile-label">Ø pro Woche</div><div class="tile-value" id="gymAvg">—</div><div class="tile-sub">letzte 8 Wochen</div></div>
+          <div class="tile"><div class="tile-label">Dieses Jahr</div><div class="tile-value" id="gymYear">0</div><div class="tile-sub">Gym-Tage</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2 class="card-title">Letzte 12 Wochen</h2><span class="card-sub">Besuche pro Kalenderwoche</span></div>
+          <div id="gymChart"></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h2 class="card-title">Deine Gym-Tage</h2></div>
+            <ul class="list" id="gymDays"></ul>
+            <p class="empty" id="gymDaysEmpty">Noch keine Gym-Tage eingetragen.</p>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2 class="card-title">Workouts von deiner Uhr</h2></div>
+            <ul class="list" id="workoutList"></ul>
+            <p class="empty" id="workoutEmpty">Keine Workouts in letzter Zeit.</p>
+            <p class="hint">Krafttraining, das deine Uhr aufzeichnet, wird automatisch als Gym-Tag gezählt.</p>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-title"><span>Historie</span><span class="aside">letzte 30 Tage</span></div>
-          <div class="stat-row">
-            <div><div class="mini-label">Erledigt</div><div class="stat-num" id="ghRate">—</div></div>
-            <div><div class="mini-label">Perfekte Tage</div><div class="stat-num" id="ghPerfect">—</div></div>
-            <div><div class="mini-label">Serie</div><div class="stat-num" id="ghStreak">0</div></div>
-            <div><div class="mini-label">Rekord</div><div class="stat-num" id="ghBest">0</div></div>
+          <div class="card-head">
+            <div><h2 class="card-title">Fortschrittsfotos</h2><div class="card-sub" id="photoCount">Optional · nur auf diesem Gerät</div></div>
+            <div class="btn-row">
+              <button type="button" class="btn btn-light btn-sm" id="photoCompareBtn" hidden>Vergleichen</button>
+              <button type="button" class="btn btn-dark btn-sm" id="photoAddBtn">+ Foto</button>
+            </div>
           </div>
-          <div class="heatmap-wrap"><div class="heatmap" id="goalHeatmap" aria-label="Ziele pro Tag"></div></div>
-          <div class="hm-legend">
-            <span>weniger</span>
-            <span class="hm-cell" style="background:rgba(255,107,107,0.30)"></span>
-            <span class="hm-cell" style="background:rgba(107,227,164,0.30)"></span>
-            <span class="hm-cell" style="background:rgba(107,227,164,0.55)"></span>
-            <span class="hm-cell" style="background:#6BE3A4"></span>
-            <span>alles erledigt</span>
+          <div class="photo-grid" id="photoGrid"></div>
+          <div class="empty" id="photoEmpty">
+            <p style="margin:0 0 12px">Mach alle paar Wochen ein Foto — so siehst du Fortschritt, den die Waage nicht zeigt.</p>
+            <button type="button" class="btn btn-light btn-sm" id="photoEmptyBtn">Erstes Foto hinzufügen</button>
           </div>
-          <div class="hm-detail" id="goalDayDetail" hidden></div>
-          <p class="field-hint">Tippe auf einen Tag, um zu sehen, was du dir vorgenommen und geschafft hast.</p>
+          <details class="hidden-list" id="hiddenPhotos" hidden>
+            <summary id="hiddenCount">Ausgeblendete Fotos</summary>
+            <div id="hiddenList"></div>
+          </details>
         </div>
       </div>
     </section>
 
-    <!-- ============ EXPERIMENTE ============ -->
-    <section class="view" id="view-experimente" aria-label="Experimente" hidden>
-      <div class="view-head">
-        <p class="lead" style="margin:0">Probier eine Gewohnheit aus und sieh, ob sie dich wirklich verändert. Das Dashboard vergleicht die 4 Wochen davor mit der Zeit währenddessen — und sagt ehrlich „kein klarer Effekt“, wenn die Daten es nicht hergeben.</p>
-        <button type="button" class="btn-primary" id="expNewBtn">+ Neues Experiment</button>
-      </div>
-      <div class="card" id="expEmpty" hidden>
-        <div class="card-title"><span>Ideen zum Starten</span></div>
-        <div class="btn-row">
-          <button type="button" class="chip-btn" data-exp-idea="Kein Koffein nach 14 Uhr" data-exp-metric="sleep">☕ Kein Koffein nach 14 Uhr → Schlaf</button>
-          <button type="button" class="chip-btn" data-exp-idea="Handy ab 22 Uhr weg" data-exp-metric="sleepScore">📵 Handy ab 22 Uhr weg → Schlafscore</button>
-          <button type="button" class="chip-btn" data-exp-idea="Kein Alkohol" data-exp-metric="hrv">🚫 Kein Alkohol → HRV</button>
-          <button type="button" class="chip-btn" data-exp-idea="Täglich 20 Min spazieren" data-exp-metric="rhr">🚶 20 Min Spazieren → Ruhepuls</button>
-          <button type="button" class="chip-btn" data-exp-idea="Morgens 10 Min meditieren" data-exp-metric="stress">🧘 Meditieren → Stress</button>
+    <!-- ============ UNI ============ -->
+    <section class="view" id="view-uni" aria-label="Uni" hidden>
+      <div class="grid-2">
+        <div class="stack">
+          <div class="focus">
+            <div class="aura" aria-hidden="true"></div>
+            <div class="card">
+              <div class="card-head"><h2 class="card-title">Nächster Termin</h2><button type="button" class="btn btn-light btn-sm" data-add-exam>+ Termin</button></div>
+              <div id="uniExamBox" hidden>
+                <div class="exam-hero">
+                  <div style="min-width:0">
+                    <div class="exam-title" id="uniExamTitle"></div>
+                    <div class="exam-meta" id="uniExamMeta"></div>
+                  </div>
+                  <div class="exam-days" id="uniExamDays" style="text-align:right"></div>
+                </div>
+              </div>
+              <div id="uniExamEmpty" hidden>
+                <p class="lead">Trag deine Klausuren, Abgaben und Vorträge ein — dann siehst du immer, wie viel Zeit noch bleibt.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2 class="card-title">Alle Termine</h2></div>
+            <ul class="list" id="examList"></ul>
+            <p class="empty" id="examListEmpty">Keine anstehenden Termine.</p>
+            <details class="hidden-list" id="examPastWrap" hidden>
+              <summary id="examPastSum">Vergangene Termine</summary>
+              <ul class="list" id="examPast"></ul>
+            </details>
+          </div>
         </div>
-        <div style="margin-top:14px"><button type="button" class="btn-secondary btn-small" id="expEmptyBtn">Eigenes Experiment anlegen</button></div>
+
+        <div class="stack">
+          <div class="card">
+            <div class="card-head"><h2 class="card-title">Lernzeit diese Woche</h2></div>
+            <div class="big" id="studyWeek">0 Min</div>
+            <div class="track" id="studyWeekTrack" style="margin-top:12px"><div class="track-fill aura-fill" id="studyWeekFill" style="width:0%"></div></div>
+            <p class="hint" id="studyToday"></p>
+            <div class="timer-box" id="studyTimerBox" hidden style="margin-top:14px">
+              <div><div class="timer-time"><span class="rec-dot"></span><span id="studyTimerTime">0:00</span></div><div class="timer-sub" id="studyTimerSub"></div></div>
+            </div>
+            <div style="margin-top:14px"><input type="text" id="studySubject" class="input" placeholder="Fach (optional), z. B. Statistik" list="subjectList" autocomplete="off" maxlength="60"></div>
+            <button type="button" class="btn btn-dark btn-block" id="studyTimerBtn" style="margin-top:10px">Lernen starten</button>
+            <div class="quick-adds">
+              <span class="small muted" style="align-self:center">Schon gelernt?</span>
+              <button type="button" class="chip" data-quick-mins="15">+15 Min</button>
+              <button type="button" class="chip" data-quick-mins="30">+30 Min</button>
+              <button type="button" class="chip" data-quick-mins="60">+1 Std</button>
+              <button type="button" class="text-btn" id="studyManualBtn">Anderer Tag…</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2 class="card-title">Nach Fach</h2><span class="card-sub">diese Woche</span></div>
+            <div id="studySubjects"></div>
+            <p class="empty" id="studySubjectsEmpty">Diese Woche noch nichts gelernt.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2 class="card-title">Letzte 8 Wochen</h2><span class="card-sub">Stunden pro Kalenderwoche</span></div>
+            <div id="studyChart"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2 class="card-title">Einträge</h2></div>
+            <ul class="list" id="studyLog"></ul>
+            <p class="empty" id="studyLogEmpty">Noch keine Lernzeit eingetragen.</p>
+          </div>
+        </div>
       </div>
-      <div class="exp-list" id="expList"></div>
+      <datalist id="subjectList"></datalist>
     </section>
 
-    <!-- ============ FOTOS ============ -->
-    <section class="view" id="view-fotos" aria-label="Fortschrittsfotos" hidden>
-      <div class="view-head">
-        <div>
-          <p class="lead" style="margin:0 0 4px">Deine Fortschrittsfotos — privat, nur auf diesem Gerät gespeichert.</p>
-          <span class="muted small mono" id="photoCount">Optional</span>
+    <!-- ============ VERLAUF ============ -->
+    <section class="view" id="view-verlauf" aria-label="Verlauf" hidden>
+      <div class="chips" id="historyChips" role="group" aria-label="Wert auswählen"></div>
+      <div class="stack">
+        <div class="focus">
+          <div class="aura" aria-hidden="true"></div>
+          <div class="card">
+            <div class="history-head">
+              <div>
+                <div class="eyebrow" id="readoutLabel">—</div>
+                <div class="readout-value" id="readoutValue">—</div>
+                <div class="readout-date" id="readoutDate">&nbsp;</div>
+              </div>
+              <div class="segmented" id="historyRanges" role="group" aria-label="Zeitraum"></div>
+            </div>
+            <div id="historyChart"></div>
+            <div class="legend" id="historyLegend"></div>
+          </div>
         </div>
-        <div class="btn-row">
-          <button type="button" class="btn-secondary btn-small" id="photoCompareBtn" hidden>Vergleichen</button>
-          <button type="button" class="btn-primary btn-small" id="photoAddBtn">+ Foto</button>
+        <div class="card">
+          <p class="summary" id="historySummary"></p>
+          <p class="hint" id="metricAbout"></p>
+          <div class="stat-tiles">
+            <div class="tile"><div class="tile-label">Niedrigster</div><div class="tile-value" id="statMin">—</div><div class="tile-sub" id="statMinDate"></div></div>
+            <div class="tile"><div class="tile-label">Höchster</div><div class="tile-value" id="statMax">—</div><div class="tile-sub" id="statMaxDate"></div></div>
+            <div class="tile"><div class="tile-label">Tage mit Daten</div><div class="tile-value" id="statDays">—</div><div class="tile-sub">&nbsp;</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2 class="card-title">Wochenrückblick</h2></div>
+          <div class="table-wrap"><table class="data-table"><thead id="weeklyHead"></thead><tbody id="weeklyBody"></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2 class="card-title">Alle Werte</h2></div>
+          <div class="table-wrap"><table class="data-table"><thead id="dataHead"></thead><tbody id="dataBody"></tbody></table></div>
+          <div class="more-row"><button type="button" class="text-btn" id="dataMore" hidden>Mehr anzeigen</button></div>
         </div>
       </div>
-      <div class="photo-grid" id="photoGrid"></div>
-      <div class="card photo-empty" id="photoEmpty">
-        <p style="margin:0 0 14px">Ein visuelles Tagebuch, wann immer du willst. Fotos werden nicht hochgeladen und erzeugen keine Werte.</p>
-        <button type="button" class="btn-primary btn-small" id="photoEmptyBtn">Erstes Foto hinzufügen</button>
-      </div>
-      <details class="hidden-list" id="hiddenPhotos" hidden>
-        <summary id="hiddenCount">Ausgeblendete Fotos</summary>
-        <p class="sheet-note">Aus der Galerie ausgeblendet. Wiederherstellen oder endgültig von diesem Gerät löschen.</p>
-        <div id="hiddenList"></div>
-      </details>
-      <p class="field-hint" style="margin-top:16px">Tipp: Fotos liegen nur in diesem Browser. Wenn du Website-Daten löschst, sind sie weg — wichtige Fotos zusätzlich in deiner Galerie behalten.</p>
     </section>
   </div>
 </div>
 
-<!-- ============ Tab bar (mobile) ============ -->
+<!-- ============ Tab bar (Handy) ============ -->
 <nav class="tabbar" aria-label="Navigation">
   <button type="button" class="tab-btn" data-nav="heute" data-icon="home">Heute</button>
-  <button type="button" class="tab-btn" data-nav="verlauf" data-icon="chart">Verlauf</button>
   <button type="button" class="tab-btn" data-nav="ziele" data-icon="check">Ziele</button>
-  <button type="button" class="tab-btn" data-nav="experimente" data-icon="flask">Experimente</button>
-  <button type="button" class="tab-btn" data-nav="fotos" data-icon="image">Fotos</button>
+  <button type="button" class="tab-btn" data-nav="gym" data-icon="gym">Gym</button>
+  <button type="button" class="tab-btn" data-nav="uni" data-icon="book">Uni</button>
+  <button type="button" class="tab-btn" data-nav="verlauf" data-icon="chart">Verlauf</button>
 </nav>
 
 <!-- ============ Sheets ============ -->
@@ -363,146 +466,120 @@
 <div class="sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" aria-hidden="true">
   <div class="sheet-grabber"></div>
   <div class="sheet-head"><h2 id="settingsTitle">Einstellungen</h2></div>
-  <p class="sheet-note" id="demoNote" hidden>Du bist im Demo-Modus. Einstellungen hier gelten nur für die Demo — deine echten Schlüssel trägst du auf der normalen Seite ein.</p>
-
+  <p class="sheet-note" id="demoNote" hidden>Du bist im Demo-Modus. Einstellungen hier gelten nur für die Demo.</p>
+  <h3>Deine Ziele</h3>
+  <div class="field-grid">
+    <div class="field"><label class="field-label" for="setGymGoal">Gym</label><select id="setGymGoal" class="select"></select></div>
+    <div class="field"><label class="field-label" for="setStudyGoal">Lernen pro Woche (Std)</label><input type="text" id="setStudyGoal" class="input" inputmode="decimal" placeholder="z. B. 10" autocomplete="off"></div>
+    <div class="field"><label class="field-label" for="setStepGoal">Schritte pro Tag</label><input type="number" id="setStepGoal" class="input" placeholder="10000" min="1" step="500" inputmode="numeric"></div>
+    <div class="field"><label class="field-label" for="setWeightGoal">Zielgewicht (kg)</label><input type="text" id="setWeightGoal" class="input" placeholder="optional" inputmode="decimal" autocomplete="off"></div>
+  </div>
+  <h3>Dein Tag</h3>
+  <div class="field-grid">
+    <div class="field"><label class="field-label" for="setWake">Aufstehen</label><select id="setWake" class="select"></select></div>
+    <div class="field"><label class="field-label" for="setSleep">Schlafenszeit</label><select id="setSleep" class="select"></select></div>
+  </div>
   <h3>Verbindungen</h3>
   <div class="field">
     <label class="field-label" for="setApiKey">Intervals.icu API-Schlüssel</label>
     <div class="field-row">
-      <input type="password" id="setApiKey" class="text-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <button type="button" class="field-toggle" id="toggleApiKey" aria-controls="setApiKey">Zeigen</button>
+      <input type="password" id="setApiKey" class="input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button type="button" class="btn btn-light" id="toggleApiKey" aria-controls="setApiKey">Zeigen</button>
     </div>
   </div>
   <div class="field">
     <label class="field-label" for="setAthleteId">Athleten-ID</label>
-    <input type="text" id="setAthleteId" class="text-input" placeholder="0" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-    <div class="field-hint">0 = der Besitzer des Schlüssels (du). Alternativ deine ID, z. B. i123456.</div>
+    <input type="text" id="setAthleteId" class="input" placeholder="0" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="field-hint">0 = du selbst. Alternativ deine ID, z. B. i123456.</div>
   </div>
   <div class="field">
-    <label class="field-label" for="setAnthropicKey">Anthropic API-Schlüssel (optional, für ✨ Polieren und Frag Claude)</label>
-    <input type="password" id="setAnthropicKey" class="text-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label class="field-label" for="setAnthropicKey">Anthropic API-Schlüssel (optional, für Frag Claude und ✨)</label>
+    <input type="password" id="setAnthropicKey" class="input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
   </div>
   <p class="sheet-note">Schlüssel werden nur in diesem Browser gespeichert und nie in ein Backup geschrieben.</p>
-
-  <h3>Ziele &amp; Tag</h3>
-  <div class="field-grid">
-    <div class="field">
-      <label class="field-label" for="setStepGoal">Schrittziel</label>
-      <input type="number" id="setStepGoal" class="text-input" placeholder="10000" min="1" step="500" inputmode="numeric">
-    </div>
-    <div class="field">
-      <label class="field-label" for="setWeightGoal">Zielgewicht (kg)</label>
-      <input type="text" id="setWeightGoal" class="text-input" placeholder="optional" inputmode="decimal" autocomplete="off">
-    </div>
-    <div class="field">
-      <label class="field-label" for="setWake">Aufstehen</label>
-      <select id="setWake" class="select-input"></select>
-    </div>
-    <div class="field">
-      <label class="field-label" for="setSleep">Schlafenszeit</label>
-      <select id="setSleep" class="select-input"></select>
-    </div>
-  </div>
-
-  <h3>Körper-Index</h3>
-  <p class="sheet-note">100 ist deine eigene Basis (deine ersten 30 Tage mit Daten). 10 Punkte = eine normale Schwankung bei dir, nicht 10 %. Du legst fest, was für dich „besser“ heißt.</p>
-  <div id="dirList"></div>
-  <button type="button" class="text-btn" id="resetBaselines">Basis neu berechnen</button>
-
-  <h3>Daten</h3>
-  <p class="sheet-note">Ziele, Check-ins und Experimente liegen nur in diesem Browser. Mach ab und zu ein Backup. Deine Amazfit-Werte liegen sicher bei Intervals.icu.</p>
+  <h3>Daten sichern</h3>
+  <p class="sheet-note">Ziele, Gym-Tage, Uni-Termine und Lernzeiten liegen nur auf diesem Gerät. Mach ab und zu ein Backup. Deine Uhr-Werte liegen sicher bei Intervals.icu.</p>
   <div class="btn-row" style="margin-bottom:16px">
-    <button type="button" class="btn-secondary btn-small" id="exportBtn">Backup herunterladen</button>
-    <label class="btn-secondary btn-small" style="cursor:pointer">Backup importieren<input type="file" id="importFile" accept="application/json,.json" hidden></label>
+    <button type="button" class="btn btn-light btn-sm" id="exportBtn">Backup herunterladen</button>
+    <label class="btn btn-light btn-sm" style="cursor:pointer">Backup importieren<input type="file" id="importFile" accept="application/json,.json" hidden></label>
   </div>
-
   <div class="sheet-result" id="settingsResult" aria-live="polite"></div>
   <div class="sheet-actions">
-    <button type="button" class="btn-secondary" id="settingsCancel">Abbrechen</button>
-    <button type="button" class="btn-primary" id="settingsSave">Speichern &amp; testen</button>
+    <button type="button" class="btn btn-light" id="settingsCancel">Abbrechen</button>
+    <button type="button" class="btn btn-dark" id="settingsSave">Speichern</button>
   </div>
 </div>
 
 <div class="sheet" id="measureSheet" role="dialog" aria-modal="true" aria-labelledby="measureTitle" aria-hidden="true">
   <div class="sheet-grabber"></div>
-  <div class="sheet-head"><h2 id="measureTitle">Messung eintragen</h2></div>
-  <div class="field">
-    <label class="field-label" for="measureDate">Gemessen am</label>
-    <input type="date" id="measureDate" class="text-input">
-  </div>
+  <div class="sheet-head"><h2 id="measureTitle">Gewicht eintragen</h2></div>
+  <div class="field"><label class="field-label" for="measureDate">Gemessen am</label><input type="date" id="measureDate" class="input"></div>
   <div class="field-grid">
-    <div class="field">
-      <label class="field-label" for="measureWeight">Gewicht (kg)</label>
-      <input type="text" id="measureWeight" class="text-input" inputmode="decimal" autocomplete="off">
-    </div>
-    <div class="field">
-      <label class="field-label" for="measureFat">Körperfett (%)</label>
-      <input type="text" id="measureFat" class="text-input" inputmode="decimal" autocomplete="off">
-    </div>
+    <div class="field"><label class="field-label" for="measureWeight">Gewicht (kg)</label><input type="text" id="measureWeight" class="input" inputmode="decimal" autocomplete="off"></div>
+    <div class="field"><label class="field-label" for="measureFat">Körperfett (%)</label><input type="text" id="measureFat" class="input" inputmode="decimal" autocomplete="off" placeholder="optional"></div>
   </div>
   <p class="sheet-note" id="measureNote"></p>
   <div class="sheet-result" id="measureResult" aria-live="polite"></div>
   <div class="sheet-actions">
-    <button type="button" class="btn-secondary" id="measureCancel">Abbrechen</button>
-    <button type="button" class="btn-primary" id="measureSave">Speichern</button>
+    <button type="button" class="btn btn-light" id="measureCancel">Abbrechen</button>
+    <button type="button" class="btn btn-dark" id="measureSave">Speichern</button>
   </div>
 </div>
 
-<div class="sheet" id="expSheet" role="dialog" aria-modal="true" aria-labelledby="expFormTitle" aria-hidden="true">
+<div class="sheet" id="examSheet" role="dialog" aria-modal="true" aria-labelledby="examFormTitle" aria-hidden="true">
   <div class="sheet-grabber"></div>
-  <div class="sheet-head"><h2 id="expFormTitle">Neues Experiment</h2></div>
+  <div class="sheet-head"><h2 id="examFormTitle">Neuer Termin</h2></div>
   <div class="field">
-    <label class="field-label" for="expName">Was probierst du aus?</label>
-    <input type="text" id="expName" class="text-input" placeholder="z. B. Kein Koffein nach 14 Uhr" maxlength="80" autocomplete="off">
+    <label class="field-label" for="examType">Art</label>
+    <select id="examType" class="select">
+      <option value="klausur">📝 Klausur</option>
+      <option value="abgabe">📄 Abgabe</option>
+      <option value="vortrag">🎤 Vortrag / Präsentation</option>
+      <option value="sonstiges">📌 Sonstiges</option>
+    </select>
   </div>
+  <div class="field"><label class="field-label" for="examTitle">Fach / Titel</label><input type="text" id="examTitle" class="input" placeholder="z. B. Mathe 2" maxlength="80" autocomplete="off"></div>
   <div class="field-grid">
-    <div class="field">
-      <label class="field-label" for="expStart">Start</label>
-      <input type="date" id="expStart" class="text-input">
-    </div>
-    <div class="field">
-      <label class="field-label" for="expEnd">Ende (optional)</label>
-      <input type="date" id="expEnd" class="text-input">
-    </div>
+    <div class="field"><label class="field-label" for="examDate">Datum</label><input type="date" id="examDate" class="input"></div>
+    <div class="field"><label class="field-label" for="examTime">Uhrzeit (optional)</label><input type="time" id="examTime" class="input"></div>
   </div>
-  <div class="field">
-    <label class="field-label" for="expMetric">Welcher Wert soll sich verändern?</label>
-    <select id="expMetric" class="select-input"></select>
-    <div class="field-hint">Du kannst später unter „Alle Werte prüfen“ auch alle anderen Werte checken.</div>
-  </div>
-  <div class="field">
-    <label class="field-label" for="expNote">Notiz (optional)</label>
-    <input type="text" id="expNote" class="text-input" maxlength="300" autocomplete="off">
-  </div>
-  <div class="sheet-result" id="expResult" aria-live="polite"></div>
+  <div class="field"><label class="field-label" for="examPlace">Ort / Notiz (optional)</label><input type="text" id="examPlace" class="input" placeholder="z. B. Audimax" maxlength="80" autocomplete="off"></div>
+  <div class="sheet-result" id="examResult" aria-live="polite"></div>
   <div class="sheet-actions">
-    <button type="button" class="btn-secondary" id="expCancel">Abbrechen</button>
-    <button type="button" class="btn-primary" id="expSave">Speichern</button>
+    <button type="button" class="btn btn-light" id="examDelete" hidden>Löschen</button>
+    <button type="button" class="btn btn-light" id="examCancel">Abbrechen</button>
+    <button type="button" class="btn btn-dark" id="examSave">Speichern</button>
+  </div>
+</div>
+
+<div class="sheet" id="studySheet" role="dialog" aria-modal="true" aria-labelledby="studyTitle" aria-hidden="true">
+  <div class="sheet-grabber"></div>
+  <div class="sheet-head"><h2 id="studyTitle">Lernzeit eintragen</h2></div>
+  <div class="field"><label class="field-label" for="manualSubject">Fach (optional)</label><input type="text" id="manualSubject" class="input" list="subjectList" maxlength="60" autocomplete="off"></div>
+  <div class="field-grid">
+    <div class="field"><label class="field-label" for="manualDate">Datum</label><input type="date" id="manualDate" class="input"></div>
+    <div class="field"><label class="field-label" for="manualMins">Dauer (Minuten)</label><input type="number" id="manualMins" class="input" min="1" max="960" inputmode="numeric" placeholder="z. B. 90"></div>
+  </div>
+  <div class="sheet-result" id="manualResult" aria-live="polite"></div>
+  <div class="sheet-actions">
+    <button type="button" class="btn btn-light" id="manualCancel">Abbrechen</button>
+    <button type="button" class="btn btn-dark" id="manualSave">Speichern</button>
   </div>
 </div>
 
 <div class="sheet" id="photoSheet" role="dialog" aria-modal="true" aria-labelledby="photoTitle" aria-hidden="true">
   <div class="sheet-grabber"></div>
-  <div class="sheet-head"><h2 id="photoTitle">Fortschrittsfoto hinzufügen</h2></div>
-  <label class="file-pick">
-    <div id="photoPreview"></div>
-    <input type="file" id="photoFile" accept="image/jpeg,image/png,image/webp,image/*">
-  </label>
+  <div class="sheet-head"><h2 id="photoTitle">Fortschrittsfoto</h2></div>
+  <label class="file-pick"><div id="photoPreview"></div><input type="file" id="photoFile" accept="image/jpeg,image/png,image/webp,image/*"></label>
   <div class="field-grid" style="margin-top:14px">
-    <div class="field">
-      <label class="field-label" for="photoDate">Aufgenommen am</label>
-      <input type="date" id="photoDate" class="text-input">
-    </div>
-    <div class="field">
-      <label class="field-label" for="photoNoteInput">Notiz (optional)</label>
-      <input type="text" id="photoNoteInput" class="text-input" maxlength="200" autocomplete="off">
-    </div>
+    <div class="field"><label class="field-label" for="photoDate">Aufgenommen am</label><input type="date" id="photoDate" class="input"></div>
+    <div class="field"><label class="field-label" for="photoNoteInput">Notiz (optional)</label><input type="text" id="photoNoteInput" class="input" maxlength="200" autocomplete="off"></div>
   </div>
-  <p class="sheet-note">Das Foto wird verkleinert und nur auf diesem Gerät gespeichert. Es wird nirgends hochgeladen.</p>
+  <p class="sheet-note">Das Foto wird verkleinert und nur auf diesem Gerät gespeichert — nirgends hochgeladen.</p>
   <div class="sheet-result" id="photoResult" aria-live="polite"></div>
   <div class="sheet-actions">
-    <button type="button" class="btn-secondary" id="photoCancel">Abbrechen</button>
-    <button type="button" class="btn-primary" id="photoSave">Speichern</button>
+    <button type="button" class="btn btn-light" id="photoCancel">Abbrechen</button>
+    <button type="button" class="btn btn-dark" id="photoSave">Speichern</button>
   </div>
 </div>
 
@@ -510,26 +587,26 @@
   <div class="sheet-grabber"></div>
   <div class="sheet-head"><h2 id="viewerTitle">Foto</h2><button type="button" class="icon-btn" id="viewerClose" aria-label="Schließen" data-icon="close"></button></div>
   <img id="viewerImg" alt="Fortschrittsfoto">
-  <p class="exp-note" id="viewerNote" style="margin-top:10px" hidden></p>
+  <p class="hint" id="viewerNote" hidden></p>
   <div class="btn-row" style="margin-top:14px">
-    <button type="button" class="btn-secondary btn-small" id="viewerCompare">Vergleichen mit…</button>
+    <button type="button" class="btn btn-dark btn-sm" id="viewerCompare">Vergleichen mit…</button>
     <button type="button" class="text-btn" id="viewerHide">Aus Galerie ausblenden</button>
   </div>
 </div>
 
 <div class="sheet wide" id="compareSheet" role="dialog" aria-modal="true" aria-labelledby="compareTitle" aria-hidden="true">
   <div class="sheet-grabber"></div>
-  <div class="sheet-head"><h2 id="compareTitle">Vergleich</h2><button type="button" class="icon-btn" id="cmpClose" aria-label="Schließen" data-icon="close"></button></div>
+  <div class="sheet-head"><h2 id="compareTitle">Vorher / Nachher</h2><button type="button" class="icon-btn" id="cmpClose" aria-label="Schließen" data-icon="close"></button></div>
   <div class="field-grid">
-    <div class="field"><label class="field-label" for="cmpA">Links</label><select id="cmpA" class="select-input"></select></div>
-    <div class="field"><label class="field-label" for="cmpB">Rechts</label><select id="cmpB" class="select-input"></select></div>
+    <div class="field"><label class="field-label" for="cmpA">Links</label><select id="cmpA" class="select"></select></div>
+    <div class="field"><label class="field-label" for="cmpB">Rechts</label><select id="cmpB" class="select"></select></div>
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
     <div class="segmented">
       <button type="button" id="cmpModeSlider" aria-pressed="true">Schieberegler</button>
       <button type="button" id="cmpModeSide" aria-pressed="false">Nebeneinander</button>
     </div>
-    <div><span class="muted small mono" id="cmpDiff"></span> <button type="button" class="text-btn" id="cmpSwap">Tauschen ⇄</button></div>
+    <div><span class="small muted" id="cmpDiff"></span> <button type="button" class="text-btn" id="cmpSwap">Tauschen ⇄</button></div>
   </div>
   <div id="cmpSlider">
     <div class="compare-stage">
@@ -550,23 +627,23 @@
 <div class="sheet wide" id="askSheet" role="dialog" aria-modal="true" aria-labelledby="askTitle" aria-hidden="true">
   <div class="sheet-grabber"></div>
   <div class="sheet-head">
-    <h2 id="askTitle">✦ Frag Claude</h2>
-    <div class="btn-row">
+    <h2 id="askTitle">Frag Claude</h2>
+    <div class="btn-row" style="align-items:center">
       <button type="button" class="text-btn" id="askReset" hidden>Neues Gespräch</button>
       <button type="button" class="icon-btn" id="askClose" aria-label="Schließen" data-icon="close"></button>
     </div>
   </div>
   <p class="sheet-note" id="askNoKey" hidden>Ohne Anthropic-Schlüssel kopiert „Prompt kopieren“ deine Frage zusammen mit deinen Daten. Öffne dann <a href="https://claude.ai/new" target="_blank" rel="noopener">claude.ai</a> und füge sie ein. Mit Schlüssel (⚙) antwortet Claude direkt hier.</p>
   <div class="ask-chips" id="askChips">
-    <button type="button" class="chip-btn">Wie war meine letzte Woche?</button>
-    <button type="button" class="chip-btn">Was beeinflusst meinen Schlaf am meisten?</button>
-    <button type="button" class="chip-btn">Wirken meine Experimente?</button>
-    <button type="button" class="chip-btn">Worauf sollte ich mich diese Woche konzentrieren?</button>
+    <button type="button" class="chip">Wie war meine Woche?</button>
+    <button type="button" class="chip">Lerne ich genug für meine nächste Klausur?</button>
+    <button type="button" class="chip">Schlafe ich besser an Gym-Tagen?</button>
+    <button type="button" class="chip">Worauf soll ich mich diese Woche konzentrieren?</button>
   </div>
   <div class="ask-thread" id="askThread"></div>
   <div class="ask-input-row">
-    <textarea id="askInput" class="text-input" rows="2" placeholder="Frag etwas über deine Daten…" maxlength="1000"></textarea>
-    <button type="button" class="btn-primary" id="askSend">Fragen</button>
+    <textarea id="askInput" class="input" rows="2" placeholder="Frag etwas über deine Daten…" maxlength="1000"></textarea>
+    <button type="button" class="btn btn-dark" id="askSend">Fragen</button>
   </div>
   <details class="ask-context" style="margin-top:12px">
     <summary>Was Claude sieht</summary>
@@ -577,13 +654,14 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/core.js?v=7"></script>
-<script src="js/goals.js?v=7"></script>
-<script src="js/body.js?v=7"></script>
-<script src="js/history.js?v=7"></script>
-<script src="js/experiments.js?v=7"></script>
-<script src="js/photos.js?v=7"></script>
-<script src="js/ask.js?v=7"></script>
-<script src="js/app.js?v=7"></script>
+<script src="js/core.js?v=10"></script>
+<script src="js/goals.js?v=10"></script>
+<script src="js/body.js?v=10"></script>
+<script src="js/gym.js?v=10"></script>
+<script src="js/uni.js?v=10"></script>
+<script src="js/history.js?v=10"></script>
+<script src="js/photos.js?v=10"></script>
+<script src="js/ask.js?v=10"></script>
+<script src="js/app.js?v=10"></script>
 </body>
 </html>

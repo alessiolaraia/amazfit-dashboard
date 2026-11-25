@@ -76,7 +76,7 @@
   }
 
   function render() {
-    if ($('view-fotos').hidden) return;
+    if ($('view-gym').hidden) return;
     all().then(function (rows) {
       cache = rows.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (b.createdAt - a.createdAt); });
       revokeAll();

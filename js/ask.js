@@ -16,7 +16,7 @@
 
   var SYSTEM =
     'Du bist ein persönlicher Daten-Coach in einem privaten Gesundheits- und Gewohnheits-Dashboard. ' +
-    'Die Daten stammen von einer Amazfit-Uhr (über Zepp und Intervals.icu), aus täglichen Check-ins und einer To-do-Liste. ' +
+    'Die Daten stammen von einer Amazfit-Uhr (über Zepp und Intervals.icu), einem Gym-Tracker, einem Lernzeit-Tracker mit Uni-Terminen und einer To-do-Liste. Der Nutzer ist Student. ' +
     'Antworte immer auf Deutsch, per du, kurz und konkret (meist unter 200 Wörtern). ' +
     'Beziehe dich auf konkrete Zahlen und Daten aus dem Kontext. Wenn die Daten für eine Aussage nicht reichen, sag das offen statt zu raten. ' +
     'Unterscheide Zusammenhang von Ursache. Stelle keine medizinischen Diagnosen; empfiehl bei auffälligen Werten oder Beschwerden ärztlichen Rat. ' +
@@ -38,25 +38,23 @@
     var s = D.getSettings();
     var lines = [];
     lines.push('Heute ist ' + D.fmtDayLong(today) + ' ' + today.slice(0, 4) + '.');
-    lines.push('Schrittziel: ' + s.stepGoal + '.' + (s.weightGoal ? ' Zielgewicht: ' + D.fmtNum(s.weightGoal, 1) + ' kg.' : ''));
-    var lc = D.latestComposite();
-    if (lc) {
-      lines.push('Körper-Index (100 = eigene Basis aus den ersten 30 Tagen, 10 Punkte = eine Standardabweichung): ' + Math.round(lc.score) +
-        ' am ' + lc.date + ' (Teile: ' + lc.parts.map(function (p) { return D.M[p.key].label + ' ' + Math.round(p.idx); }).join(', ') + ').');
+    lines.push('Ziele: ' + s.stepGoal + ' Schritte/Tag, Gym ' + s.gymGoal + '× pro Woche, Lernen ' + s.studyGoalH + ' Std pro Woche' + (s.weightGoal ? ', Zielgewicht ' + D.fmtNum(s.weightGoal, 1) + ' kg' : '') + '.');
+    var f = D.tagesform();
+    if (f.status) {
+      lines.push('Tagesform heute: ' + ({ gut: 'gut erholt', normal: 'normal', muede: 'eher müde' })[f.status] + ' (Vergleich von letzter Nacht mit dem eigenen Schnitt der 30 Tage davor: ' +
+        f.parts.map(function (p) { return D.M[p.key].label + ' ' + D.fmtValue(p.key, p.value) + (p.normal != null ? ' vs. normal ' + D.fmtValue(p.key, p.normal) : ''); }).join(', ') + ').');
     }
-    var basis = D.indexMembers().filter(D.indexReady).map(function (k) {
-      var b = D.baseline(k);
-      return D.M[k].label + ' Ø ' + D.fmtValue(k, b.mean) + ' ± ' + D.fmtNum(b.sd, D.M[k].dec || (k === 'sleep' ? 2 : 0));
-    });
-    if (basis.length) lines.push('Basiswerte: ' + basis.join('; ') + '.');
     lines.push('');
-    var cols = ['sleep', 'sleepScore', 'hrv', 'rhr', 'steps', 'weight', 'mood', 'energy', 'stress', 'goals'].filter(D.hasData);
-    var labels = { sleep: 'Schlaf_h', sleepScore: 'Schlafscore', hrv: 'HRV_ms', rhr: 'Ruhepuls', steps: 'Schritte', weight: 'Gewicht_kg', mood: 'Stimmung_1-5', energy: 'Energie_1-5', stress: 'Stress_1-5', goals: 'Ziele_%' };
-    lines.push('Tageswerte der letzten 30 Tage (leer = nicht gemessen):');
-    lines.push(['Datum'].concat(cols.map(function (c) { return labels[c]; })).join(' | '));
+    var cols = ['sleep', 'sleepScore', 'hrv', 'rhr', 'steps', 'weight'].filter(D.hasData);
+    var labels = { sleep: 'Schlaf_h', sleepScore: 'Schlafscore', hrv: 'HRV_ms', rhr: 'Ruhepuls', steps: 'Schritte', weight: 'Gewicht_kg' };
+    lines.push('Tageswerte der letzten 30 Tage (leer = nicht gemessen; Gym = x wenn im Gym; Lernen in Minuten):');
+    lines.push(['Datum'].concat(cols.map(function (c) { return labels[c]; })).concat(['Gym', 'Lernen_min']).join(' | '));
     for (var i = 29; i >= 0; i--) {
       var d = D.shift(today, -i);
       var row = cols.map(function (c) { return cell(c, d); });
+      var gym = D.isGymDay && D.isGymDay(d) ? 'x' : '';
+      var study = D.studyMinsDay ? D.studyMinsDay(d) : 0;
+      row.push(gym, study ? String(Math.round(study)) : '');
       if (row.every(function (x) { return x === ''; })) continue;
       lines.push([d + ' ' + D.wdShort(d)].concat(row).join(' | '));
     }
@@ -74,33 +72,20 @@
       lines.push('30-Tage-Durchschnitte, neuester zuerst (bis 6 Monate zurück):');
       monthly.forEach(function (l) { lines.push(l); });
     }
-    var ex = D.Experiments ? D.Experiments.summaries() : [];
-    if (ex.length) {
-      lines.push('');
-      lines.push('Experimente (Vergleich 28 Tage davor vs. während, Urteil erst ab 10 Tagen je Seite und 2 Standardfehlern):');
-      ex.forEach(function (l) { lines.push('- ' + l); });
-    }
-    var notes = [];
-    var ck = D.checkins();
-    for (var j = 13; j >= 0; j--) {
-      var dd = D.shift(today, -j);
-      if (ck[dd] && ck[dd].note) notes.push(dd + ': ' + ck[dd].note);
-    }
-    if (notes.length) {
-      lines.push('');
-      lines.push('Notizen aus den Check-ins (letzte 14 Tage):');
-      notes.forEach(function (n) { lines.push('- ' + n); });
-    }
+    if (D.Gym) { lines.push(''); lines.push(D.Gym.summary()); }
+    if (D.Uni) { lines.push(''); lines.push(D.Uni.summary()); }
     var goals = D.getGoals(D.todayGoalsKey());
     if (goals.length) {
       lines.push('');
-      lines.push('Ziele heute: ' + goals.map(function (g) { return (g.done ? '[x] ' : '[ ] ') + g.text; }).join('; '));
+      lines.push('Tagesziele heute: ' + goals.map(function (g) { return (g.done ? '[x] ' : '[ ] ') + g.text; }).join('; '));
     }
+    var wk = D.weekGoals();
+    if (wk.length) lines.push('Wochenziele: ' + wk.map(function (g) { return g.text + ' ' + g.count + '/' + g.target; }).join('; '));
     var acts = D.model.a.slice().sort(function (a, b) { return a.start_date_local < b.start_date_local ? 1 : -1; }).slice(0, 8);
     if (acts.length) {
       lines.push('');
-      lines.push('Letzte Workouts: ' + acts.map(function (a) {
-        return a.start_date_local.slice(0, 10) + ' ' + (a.name || a.type) + (D.positive(a.moving_time) ? ' ' + Math.round(a.moving_time / 60) + ' Min' : '') + (D.isNum(a.icu_training_load) ? ' Last ' + Math.round(a.icu_training_load) : '');
+      lines.push('Letzte Workouts der Uhr: ' + acts.map(function (a) {
+        return a.start_date_local.slice(0, 10) + ' ' + (a.name || a.type) + (D.positive(a.moving_time) ? ' ' + Math.round(a.moving_time / 60) + ' Min' : '');
       }).join('; '));
     }
     return lines.join('\n');
