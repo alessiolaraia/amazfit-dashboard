@@ -49,7 +49,7 @@
   D.classifyIntervalsError = classifyError;
 
   var state = { error: null, loading: false, inflight: null, lastFetchStart: 0, trailingTimer: null, syncPending: false };
-  function setLoading(on) { state.loading = on; $('bodyRefreshBtn').classList.toggle('is-spinning', on); }
+  function setLoading(on) { state.loading = on; var b = $('bodySyncBtn'); b.disabled = on; b.textContent = on ? 'Lädt …' : 'Sync'; }
 
   function fetchBody(opts) {
     opts = opts || {};
@@ -292,7 +292,6 @@
     var hasKey = D.DEMO || !!D.getSettings().apiKey;
     $('bodyOnboard').hidden = hasKey;
     $('formContent').hidden = !hasKey;
-    $('bodyRefreshBtn').hidden = !hasKey;
     $('bodySyncBtn').hidden = !hasKey;
     $('bodyTiles').hidden = !hasKey;
     if (!hasKey) { $('bodyError').hidden = true; $('bodyStatus').textContent = ''; return; }
@@ -362,15 +361,15 @@
       if (D.DEMO) applyModel(makeDemo());
       else { var c = loadCache(); if (c) applyModel(c); }
       renderBody();
-      $('bodyRefreshBtn').addEventListener('click', function () {
-        if (D.DEMO) { D.toast('Demo-Daten — nichts zu aktualisieren'); return; }
-        $('bodyRefreshBtn').classList.add('is-spinning');
-        fetchBody({ force: true });
-        setTimeout(function () { if (!state.loading) $('bodyRefreshBtn').classList.remove('is-spinning'); }, 800);
-      });
       $('bodySyncBtn').addEventListener('click', function () {
-        state.syncPending = true;
-        window.open('https://intervals.icu/calendar', '_blank', 'noopener');
+        if (D.DEMO) { D.toast('Demo-Daten — nichts zu aktualisieren'); return; }
+        fetchBody({ force: true }).then(function () {
+          if (state.error) { D.toast(state.error.text || 'Keine Verbindung — zeige gespeicherte Daten'); return; }
+          var rec = D.model.w[D.todayStr()];
+          var up = rec && rec.updated ? new Date(rec.updated) : null;
+          if (up && !isNaN(up)) D.toast('Aktualisiert · Zepp-Daten von ' + String(up.getHours()).padStart(2, '0') + ':' + String(up.getMinutes()).padStart(2, '0'));
+          else D.toast('Aktualisiert — für neue Werte zuerst die Zepp-App öffnen');
+        });
       });
       $('measureOpenBtn').addEventListener('click', openMeasure);
       $('measureSave').addEventListener('click', saveMeasure);
