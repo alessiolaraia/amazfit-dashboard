@@ -16,7 +16,7 @@
   var FULL_DAYS = 400;
   var INCREMENTAL_DAYS = 21;
   var ACTIVITY_DAYS = 120;
-  var KEEP = ['id', 'sleepSecs', 'sleepScore', 'avgSleepingHR', 'hrv', 'restingHR', 'steps', 'weight', 'bodyFat', 'readiness', 'spO2', 'ctl', 'atl'];
+  var KEEP = ['id', 'sleepSecs', 'sleepScore', 'avgSleepingHR', 'hrv', 'restingHR', 'steps', 'weight', 'bodyFat', 'readiness', 'spO2', 'ctl', 'atl', 'updated'];
   var KEEP_ACT = ['name', 'type', 'start_date_local', 'moving_time', 'average_heartrate', 'icu_training_load'];
 
   function slim(r, keys) { var o = {}; keys.forEach(function (k) { if (r[k] != null) o[k] = r[k]; }); return o; }
@@ -251,7 +251,11 @@
     var v = st ? st.value : 0;
     $('stepsValue').textContent = st ? D.fmtNum(v, 0) : '—';
     var pct = Math.round(v / s.stepGoal * 100);
-    $('stepsSub').textContent = st ? (pct >= 100 ? 'Ziel geschafft 🎉' : pct + ' % von ' + D.fmtNum(s.stepGoal, 0)) : 'heute noch keine';
+    var sub = st ? (pct >= 100 ? 'Ziel geschafft 🎉' : pct + ' % von ' + D.fmtNum(s.stepGoal, 0)) : 'heute noch keine';
+    var rec = D.model && D.model.w && D.model.w[D.todayStr()];
+    var up = rec && rec.updated ? new Date(rec.updated) : null;
+    if (st && up && !isNaN(up)) sub += ' · Stand ' + String(up.getHours()).padStart(2, '0') + ':' + String(up.getMinutes()).padStart(2, '0');
+    $('stepsSub').textContent = sub;
     $('stepsFill').style.width = Math.min(100, pct) + '%';
     $('stepsFill').classList.toggle('is-full', pct >= 100);
   }
